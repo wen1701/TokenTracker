@@ -3,6 +3,7 @@ import AppKit
 
 struct LimitsSettingsView: View {
     @ObservedObject var store: LimitsSettingsStore
+    @ObservedObject private var cpa = CPAQuotaStore.shared
     @Environment(\.colorScheme) private var colorScheme
     @State private var draggingId: String?
     @AppStorage(WeeklyLimitResetDetector.toastEnabledKey) private var toastOnReset = WeeklyLimitResetDetector.toastEnabledDefault
@@ -87,7 +88,15 @@ struct LimitsSettingsView: View {
                 .opacity(0.35)
                 .padding(.bottom, 2)
 
-            VStack(spacing: 0) {
+            accountAndProviderList
+                .padding(.bottom, 6)
+        }
+        .frame(width: 240)
+    }
+
+    private var accountAndProviderList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(store.providerOrder, id: \.self) { id in
                     providerRow(id: id)
                         .opacity(draggingId == id ? 0.4 : 1)
@@ -101,10 +110,55 @@ struct LimitsSettingsView: View {
                             draggingId: $draggingId
                         ))
                 }
+                cpaAccountSection
             }
-            .padding(.bottom, 6)
         }
-        .frame(width: 240)
+        .frame(height: listHeight)
+    }
+
+    private var listHeight: CGFloat {
+        let providerHeight = store.providerOrder.count * 29
+        let accountHeight = (cpa.quotas?.accounts.count ?? 0) * 43
+        return min(CGFloat(providerHeight + accountHeight + 40), 460)
+    }
+
+    @ViewBuilder
+    private var cpaAccountSection: some View {
+        if let accounts = cpa.quotas?.accounts, !accounts.isEmpty {
+            Divider().opacity(0.35)
+            Text(Strings.cpaAccounts)
+                .font(.caption).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12).padding(.top, 6)
+            ForEach(accounts) { account in
+                accountRow(account)
+            }
+        }
+    }
+
+    private func accountRow(_ account: CPAAccountQuota) -> some View {
+        HStack(spacing: 8) {
+            providerIcon(id: account.provider)
+                .frame(width: 14, height: 14)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(account.label).lineLimit(1).truncationMode(.middle)
+                    .font(.system(.body, design: .default))
+                Text(account.provider).font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Toggle("", isOn: Binding(
+                get: { cpa.config?.isAccountEnabled(account.id) ?? account.isEnabled },
+                set: { enabled in Task { await cpa.setAccountEnabled(account.id, enabled: enabled) } }
+            ))
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+            .labelsHidden()
+            .disabled(cpa.updating)
+            .accessibilityLabel("\(Strings.cpaAccounts) · \(account.provider) · \(account.label)")
+        }
+        .help("\(account.provider) · \(account.label)")
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 
     private func providerRow(id: String) -> some View {

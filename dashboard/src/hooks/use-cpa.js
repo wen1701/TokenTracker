@@ -5,6 +5,12 @@ import { getLocalApiAuthHeaders } from "../lib/local-api-auth";
 const CONFIG_PATH = "/functions/tokentracker-cpa-config";
 const LIMITS_PATH = "/functions/tokentracker-cpa-limits";
 
+function applySelection(data, config) {
+  if (!config.enabled || !data) return null;
+  return { ...data, accounts: data.accounts.map((account) => config.accountEnabled?.[account.id] === false
+    ? { ...account, enabled: false, windows: [], metrics: [], error: null } : account) };
+}
+
 export function useCPA({ pollLimits = false } = {}) {
   const [config, setConfig] = useState(null);
   const [data, setData] = useState(null);
@@ -33,11 +39,11 @@ export function useCPA({ pollLimits = false } = {}) {
       const next = await request(CONFIG_PATH, { signal: pending.signal });
       if (issued !== generation.current) return;
       setConfig(next);
-      if (!next.enabled) setData(null);
+      setData((previous) => applySelection(previous, next));
       if (next.enabled && pollLimits) {
         const limits = await request(LIMITS_PATH, { signal: pending.signal });
         if (issued !== generation.current) return;
-        setData(limits.enabled ? limits : null);
+        setData(limits.enabled ? applySelection(limits, next) : null);
       }
       setError(null);
     } catch (e) {
@@ -71,7 +77,7 @@ export function useCPA({ pollLimits = false } = {}) {
     try {
       const next = await request(CONFIG_PATH, { method: "POST", body: JSON.stringify(patch) });
       setConfig(next);
-      setData(null);
+      setData((previous) => patch.accountEnabled ? applySelection(previous, next) : null);
       setError(null);
       return next;
     } finally {

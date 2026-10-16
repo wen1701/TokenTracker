@@ -28,6 +28,7 @@ enum Strings {
 
     static var appTitle: String { "TokenTracker" }
     static var cpaTitle: String { t("CPA Account Quotas", "CPA 账号配额", "CPA 帳號配額", "CPA アカウント枠", "CPA 계정 할당량") }
+    static var cpaAccounts: String { t("CPA Accounts", "CPA 账号", "CPA 帳號", "CPA アカウント", "CPA 계정") }
     static var cpaEnabled: String { t("Track CPA Quotas", "开启 CPA 配额查询", "開啟 CPA 配額查詢", "CPA 枠を追跡", "CPA 할당량 추적") }
     static var cpaUnavailable: String { t("Quota query unavailable", "暂时无法查询配额", "暫時無法查詢配額", "枠を取得できません", "할당량을 조회할 수 없음") }
     static var cpaUnsupported: String { t("Quota provider not available", "暂无对应配额查询支持", "暫無對應配額查詢支援", "対応する枠取得機能がありません", "지원되는 할당량 공급자가 없음") }

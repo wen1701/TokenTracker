@@ -187,3 +187,93 @@ test("a v8 account-level 404 does not downgrade the already-negotiated connectio
   assert.equal(limits.accounts[0].error, "not_found");
   assert.equal(calls.some((url) => url.includes("/v0/")), false);
 });
+
+test("account selections merge atomically, persist across restart, and reject malformed patches", async (t) => {
+  const { service, configPath } = await fixture(t, async () => { throw new Error("unexpected network"); });
+  const a = "a".repeat(24), b = "b".repeat(24);
+  for (const accountEnabled of [null, [], false, { bad: false }, { [a]: "false" }]) {
+    assert.throws(() => parseConfigPatch({ accountEnabled }), /invalid_config/);
+  }
+  await service.saveConfig(enabled);
+  await Promise.all([
+    service.saveConfig({ accountEnabled: { [a]: false } }),
+    service.saveConfig({ accountEnabled: { [b]: false } }),
+  ]);
+  const restarted = createCPAIntegration({ configPath });
+  t.after(() => restarted.invalidate());
+  assert.deepEqual((await restarted.getConfig()).accountEnabled, { [a]: false, [b]: false });
+  const config = await service.saveConfig({ accountEnabled: { [a]: true } });
+  assert.deepEqual(config.accountEnabled, { [a]: true, [b]: false });
+  assert.equal(config.enabled, true);
+  assert.equal(JSON.parse(await fs.readFile(configPath, "utf8")).cpa.managementKey, enabled.managementKey);
+});
+
+test("disabled accounts retain metadata but skip all quota requests and discard cached windows and credits", async (t) => {
+  const calls = [];
+  const { service } = await fixture(t, async (url, options) => {
+    calls.push({ url, body: options.body });
+    if (url.endsWith("/credentials")) return response({ files: [
+      { auth_index: "a", provider: "codex", label: "Account A" },
+      { auth_index: "b", provider: "antigravity", label: "Account B", supports_quota: true, quota_plugin_id: "plugin" },
+      { auth_index: "c", provider: "claude", label: "Account C" },
+    ] });
+    if (url.includes("/plugins/")) return response({ summary: [{ key: "credits", value: 5 }] });
+    return response({ status_code: 200, body: JSON.stringify({
+      rate_limit: { primary_window: { used_percent: 50 } }, credits: { balance: 12 },
+      seven_day: { utilization: 40 },
+    }) });
+  });
+  await service.saveConfig(enabled);
+  const first = await service.getLimits();
+  const [a, b, c] = first.accounts;
+  assert.equal(a.enabled, true);
+  await service.saveConfig({ accountEnabled: { [a.id]: false, [b.id]: false } });
+  calls.length = 0;
+  const off = await service.getLimits();
+  assert.equal(calls.length, 2, "only discovery and the still-enabled Claude query are allowed");
+  assert.equal(JSON.parse(calls[1].body).auth_index, "c");
+  for (const row of off.accounts.slice(0, 2)) {
+    assert.equal(row.enabled, false);
+    assert.deepEqual(row.windows, []);
+    assert.deepEqual(row.metrics, []);
+    assert.equal(row.error, null);
+  }
+  assert.equal(off.accounts[0].label, a.label);
+  assert.equal(off.accounts[2].id, c.id);
+  assert.equal(off.accounts[2].windows.length, 1);
+  await service.saveConfig({ accountEnabled: { [a.id]: true } });
+  const on = await service.getLimits();
+  assert.equal(on.accounts[0].enabled, true);
+  assert.equal(on.accounts[0].metrics[0].value, 12);
+  assert.equal(on.accounts[1].enabled, false);
+  assert.equal(on.accounts[2].enabled, true);
+  await service.saveConfig({ accountEnabled: { [a.id]: false, [c.id]: false } });
+  calls.length = 0;
+  assert.equal((await service.getLimits()).accounts.every((row) => !row.enabled), true);
+  assert.equal(calls.length, 1, "all accounts off permits only metadata discovery");
+});
+
+test("disabling one account aborts old queries and suppresses their late result", async (t) => {
+  let release, start, hold = false, aborted = false;
+  const ready = new Promise((resolve) => { start = resolve; });
+  const { service } = await fixture(t, async (url, { signal }) => {
+    if (url.endsWith("/credentials")) return response({ files: [{ auth_index: "a", provider: "codex" }] });
+    if (hold) {
+      signal.addEventListener("abort", () => { aborted = true; }, { once: true });
+      start();
+      await new Promise((resolve) => { release = resolve; });
+    }
+    return response({ status_code: 200, body: JSON.stringify({ credits: { balance: 12 } }) });
+  });
+  await service.saveConfig(enabled);
+  const id = (await service.getLimits()).accounts[0].id;
+  service.invalidate();
+  hold = true;
+  const pending = service.getLimits();
+  await ready;
+  await service.saveConfig({ accountEnabled: { [id]: false } });
+  release();
+  assert.equal(aborted, true);
+  assert.deepEqual((await pending).accounts, []);
+  assert.equal((await service.getLimits()).accounts[0].enabled, false);
+});

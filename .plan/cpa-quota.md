@@ -116,3 +116,56 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   including authentication fail-closed behavior and no account-error downgrades.
 - Updating credential hints and packaging 1.4.5. User input requested on whether
   to securely copy the existing CPAMP admin key to the local app or let them enter it.
+- User explicitly chose secure server-to-local credential setup. Saved the existing
+  CPAMP admin key through the authenticated local config API without logging it.
+- Production repaired module verified through https://cpamp.purrtides.com:
+  v0 negotiation succeeds, Claude x1 and Codex x2 have valid windows/credits;
+  Antigravity remains explicitly unsupported without a quota plugin.
+- 46 backend/security/workflow checks and 32 UI tests passed; production dashboard
+  build plus copy/locale/architecture/version validators passed. Pushed 6cb6a6e
+  to the existing fork PR; awaiting its 1.4.5 cloud artifact for local replacement.
+- Cloud run 38915930533 succeeded; artifact 12052742715 is 146410813 bytes,
+  sha256:1fe155b36de6f59659ad6923929d510033bea0e0b62b8822f56bbac0b2e9e182.
+- Normal browser download was blocked by the client. Requested manual download
+  from the user; do not bypass browser policy. Current installed app remains 1.4.4.
+  Ready to verify the downloaded archive and perform backed-up replacement.
+- User downloaded the fix; verified both archive digests, 1.4.5 bundle identity,
+  deep/strict signature and universal architecture. Quit and backed up 1.4.4,
+  installed 1.4.5 and relaunched while preserving the CPAMP configuration byte-for-byte.
+- Verified the installed application's authenticated CPA quota endpoint negotiates
+  v0 with no global error, Codex x2 and Claude x1 work through CPAMP; Antigravity is
+  explicitly unsupported. Native Limits UI shows live account windows/credits.
+- Saved a user-facing completion record and native app screenshot under outputs.
+  No server configuration changes and no credential exposure.
+
+## Per-account tracking switches
+- User requested independent switches for every CPA/CPAMP account.
+- Add persistent selections keyed by the existing hashed account ID; preserve
+  the global master switch and default existing accounts to enabled.
+- Disabled rows remain available to re-enable, but issue no quota/plugin/API-call
+  requests and carry no stale windows, credits or reset celebrations.
+- Shared authenticated config patch merges individual selections atomically;
+  old in-flight results cannot restore disabled account data.
+- Latest screenshot fixes placement: add a CPA account group below Devin in the
+  native Limits settings gear popover; no additional menu/card switch surfaces.
+- Keep the combined provider/account list scrollable so every switch is reachable.
+- Keep reset baselines separate: disabling/re-enabling one account must not
+  manufacture a rollover or reset other accounts' baselines.
+- Verify persistence, partial merges, disabled network exclusion, race behavior,
+  native reset isolation, UI controls and builds; package through the fork workflow
+  and update the installed application while preserving its connection/credentials.
+- Implemented accountEnabled patches with strict hashed-ID/boolean validation and
+  serialized merge semantics. Disabled accounts retain metadata and skip every
+  plugin/upstream quota call. Selection saves abort and invalidate prior queries.
+- Added the account group to the requested gear popover below the provider list,
+  including a constrained scroll area, provider icons, full-label help, and
+  accessible individual switches. No extra menus or card switches were added.
+- Native display and dashboard exclude disabled rows. Native selection changes
+  clear only the affected reset baselines and suppress stale in-flight responses;
+  superseded native refreshes schedule a fresh read.
+- Verified 50 backend/API/security/workflow/reset tests and 34 dashboard tests,
+  dashboard typecheck/build, copy/locale/UI/architecture/version validators, and
+  production native model/API/store/views Swift typecheck. SwiftUI's new list was
+  split into small view properties after the initial compiler complexity error.
+- Version files synchronized to 1.4.6. Next: push the existing fork branch, verify
+  the exact-commit cloud build and install its complete signed artifact.

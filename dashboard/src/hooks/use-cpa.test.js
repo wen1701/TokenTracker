@@ -52,3 +52,27 @@ it("aborts a pending quota read when disabled and ignores a late response", asyn
   expect(result.current.data).toBeNull();
   expect(result.current.config.enabled).toBe(false);
 });
+
+it("clears disabled account data as soon as external selections arrive", async () => {
+  let selections = {}, hold = false, release;
+  const accounts = [{ id: "a", windows: [{ id: "weekly" }], metrics: [{ key: "credits", value: 12 }] }, { id: "b", windows: [], metrics: [] }];
+  vi.stubGlobal("fetch", vi.fn(async (url) => {
+    if (url.endsWith("-limits")) {
+      if (hold) await new Promise((resolve) => { release = resolve; });
+      return response({ enabled: true, accounts });
+    }
+    return response({ enabled: true, accountEnabled: selections });
+  }));
+  const { result } = renderHook(() => useCPA({ pollLimits: true }));
+  await waitFor(() => expect(result.current.data?.accounts[0].metrics).toHaveLength(1));
+  selections = { a: false };
+  hold = true;
+  let pending;
+  act(() => { pending = result.current.refresh(); });
+  await waitFor(() => expect(result.current.data?.accounts[0].enabled).toBe(false));
+  expect(result.current.data.accounts[0].windows).toEqual([]);
+  expect(result.current.data.accounts[0].metrics).toEqual([]);
+  expect(result.current.data.accounts[1].id).toBe("b");
+  await act(async () => { release(); await pending; });
+  expect(result.current.data.accounts[0].enabled).toBe(false);
+});

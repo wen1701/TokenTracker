@@ -12,6 +12,7 @@ function publicConfig(config) {
     enabled: config.enabled === true,
     baseUrl: typeof config.baseUrl === "string" ? config.baseUrl : "",
     hasManagementKey: Boolean(config.managementKey),
+    accountEnabled: { ...config.accountEnabled },
   };
 }
 
@@ -37,6 +38,14 @@ function parseConfigPatch(patch, current = {}) {
   if (Object.hasOwn(patch, "managementKey")) {
     if (typeof patch.managementKey !== "string" || /[\r\n]/.test(patch.managementKey)) throw new Error("invalid_config");
     next.managementKey = patch.managementKey.trim();
+  }
+  if (Object.hasOwn(patch, "accountEnabled")) {
+    const selections = patch.accountEnabled;
+    if (!selections || typeof selections !== "object" || Array.isArray(selections)
+      || Object.entries(selections).some(([id, value]) => !/^[a-f0-9]{24}$/.test(id) || typeof value !== "boolean")) {
+      throw new Error("invalid_config");
+    }
+    next.accountEnabled = { ...current.accountEnabled, ...selections };
   }
   if (next.enabled && (!next.baseUrl || !next.managementKey)) throw new Error("configuration_required");
   return next;
@@ -208,7 +217,11 @@ function createCPAIntegration({ configPath, fetchImpl = fetch, now = Date.now })
         const account = accounts[index];
         const provider = text(account.provider || account.type).toLowerCase();
         const id = crypto.createHash("sha256").update(`${config.baseUrl}\0${account.auth_index}`).digest("hex").slice(0, 24);
-        const row = { id, provider, label: text(account.label || account.email || account.name || `${provider} ${index + 1}`), plan: "", windows: [], metrics: [], error: null };
+        const row = { id, provider, label: text(account.label || account.email || account.name || `${provider} ${index + 1}`), enabled: config.accountEnabled?.[id] !== false, plan: "", windows: [], metrics: [], error: null };
+        if (!row.enabled) {
+          results[index] = row;
+          continue;
+        }
         try {
           let normalized;
           if (account.supports_quota && (account.quota_plugin_id || apiVersion === "v0")) {

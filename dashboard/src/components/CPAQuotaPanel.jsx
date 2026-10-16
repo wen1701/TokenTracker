@@ -22,7 +22,7 @@ export function CPAQuotaPanel() {
           {!cpa.config.enabled ? <p className="text-sm text-oai-gray-500">{copy("cpa.off")}</p> : null}
           {cpa.config.enabled && !cpa.data && !cpa.error ? <p role="status">{copy("cpa.loading")}</p> : null}
           {cpa.data?.accounts?.length === 0 && !cpa.data?.error ? <p>{copy("cpa.empty")}</p> : null}
-          {cpa.data?.accounts?.map((account) => (
+          {cpa.data?.accounts?.filter((account) => account.enabled !== false && cpa.config.accountEnabled?.[account.id] !== false).map((account) => (
             <div key={account.id} className="space-y-2 rounded-lg border border-oai-gray-200 p-3 dark:border-oai-gray-800">
               <div className="flex flex-wrap justify-between gap-2 text-sm"><span>{account.label}</span><span className="text-oai-gray-500">{[account.provider, account.plan].filter(Boolean).join(" · ")}</span></div>
               {account.error ? <p role="status" className="text-xs text-amber-600">{copy(`cpa.error.${account.error}`)}</p> : null}
