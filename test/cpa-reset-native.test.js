@@ -56,21 +56,6 @@ check(try tracker.consume(response("2026-10-16T01:02:00Z", 1, newReset), now: no
 tracker.clear()
 _ = try tracker.consume(response(before, 95, oldReset), now: now)
 check(try tracker.consume(response(after, 1, newReset, plan: "pro"), now: now).isEmpty, "plan changes must not imitate resets")
-tracker.clear()
-_ = try tracker.consume(response(before, 95, oldReset, secondAccount: true), now: now)
-tracker.clear(accountID: "first")
-let isolated = try tracker.consume(response(after, 1, newReset, secondAccount: true), now: now)
-check(isolated.count == 1 && isolated[0].windowKey.hasPrefix("cpa.second."), "toggling one account must preserve the other account's reset")
-
-tracker.clear()
-_ = try tracker.consume(response(before, 95, oldReset, secondAccount: true), now: now)
-let config = try JSONDecoder().decode(CPAConfig.self, from: Data(#"{"enabled":true,"baseUrl":"https://example.com","hasManagementKey":true,"accountEnabled":{"first":false}}"#.utf8))
-let disabled = try response(after, 1, newReset, secondAccount: true).applyingSelection(config)
-check(disabled.accounts[0].windows.isEmpty && disabled.accounts[0].metrics.isEmpty && !disabled.accounts[0].isEnabled, "disabled data must clear immediately")
-let unaffected = tracker.consume(disabled, now: now)
-check(unaffected.count == 1 && unaffected[0].windowKey.hasPrefix("cpa.second."), "disabled account must not celebrate")
-check(try tracker.consume(response("2026-10-16T01:02:00Z", 0, newReset, secondAccount: true), now: now).isEmpty, "reenabled account must start a new baseline")
-check(config.isAccountEnabled("second"), "existing accounts default to enabled")
 print("CPA reset behavior passed")
 `);
   const repo = (relative) => path.join(__dirname, "..", "TokenTrackerBar", relative);

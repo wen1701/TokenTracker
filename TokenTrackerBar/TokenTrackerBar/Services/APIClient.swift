@@ -128,10 +128,6 @@ actor APIClient {
         try await post("/functions/tokentracker-cpa-config", body: JSONEncoder().encode(["enabled": enabled]))
     }
 
-    func setCPAAccountEnabled(_ id: String, enabled: Bool) async throws -> CPAConfig {
-        try await post("/functions/tokentracker-cpa-config", body: JSONEncoder().encode(["accountEnabled": [id: enabled]]))
-    }
-
     func fetchSubscriptions() async throws -> [SubscriptionRecord] {
         let response: SubscriptionListResponse = try await fetch(
             "/functions/tokentracker-subscription-manager",

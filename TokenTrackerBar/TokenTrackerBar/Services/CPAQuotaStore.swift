@@ -22,19 +22,20 @@ final class CPAQuotaStore: ObservableObject {
 
     func refresh() async {
         guard !refreshing, !updating else { return }
-        let issued = generation
         refreshing = true
-        defer {
-            refreshing = false
-            if issued != generation { Task { await refresh() } }
-        }
+        defer { refreshing = false }
+        let issued = generation
         do {
             let next = try await APIClient.shared.fetchCPAConfig()
             guard issued == generation else { return }
-            applyConfig(next)
+            if config?.enabled != next.enabled || config?.baseUrl != next.baseUrl {
+                tracker.clear()
+                quotas = nil
+            }
+            config = next
             unavailable = false
             guard next.enabled else { quotas = nil; return }
-            let fetched = try await APIClient.shared.fetchCPAQuotas().applyingSelection(next)
+            let fetched = try await APIClient.shared.fetchCPAQuotas()
             guard issued == generation else { return }
             quotas = fetched.enabled ? fetched : nil
             if let first = tracker.consume(fetched, now: Date().timeIntervalSince1970).first {
@@ -45,32 +46,6 @@ final class CPAQuotaStore: ObservableObject {
             unavailable = true
             quotas = nil
         }
-    }
-
-    private func applyConfig(_ next: CPAConfig) {
-        if config?.enabled != next.enabled || config?.baseUrl != next.baseUrl {
-            tracker.clear()
-            quotas = nil
-        } else {
-            let ids = Set((config?.accountEnabled ?? [:]).keys).union((next.accountEnabled ?? [:]).keys)
-            for id in ids where config?.isAccountEnabled(id) != next.isAccountEnabled(id) {
-                tracker.clear(accountID: id)
-            }
-            quotas = quotas?.applyingSelection(next)
-        }
-        config = next
-    }
-
-    func setAccountEnabled(_ id: String, enabled: Bool) async {
-        guard !updating else { return }
-        generation += 1
-        updating = true
-        do {
-            applyConfig(try await APIClient.shared.setCPAAccountEnabled(id, enabled: enabled))
-            unavailable = false
-        } catch { unavailable = true }
-        updating = false
-        await refresh()
     }
 
     func setEnabled(_ enabled: Bool) async {

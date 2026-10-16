@@ -4,9 +4,6 @@ struct CPAConfig: Decodable, Equatable {
     let enabled: Bool
     let baseUrl: String
     let hasManagementKey: Bool
-    let accountEnabled: [String: Bool]?
-
-    func isAccountEnabled(_ id: String) -> Bool { accountEnabled?[id] ?? true }
 }
 
 struct CPAQuotaResponse: Decodable, Equatable {
@@ -20,15 +17,6 @@ struct CPAQuotaResponse: Decodable, Equatable {
         case enabled, configured, accounts, error
         case fetchedAt = "fetched_at"
     }
-
-    func applyingSelection(_ config: CPAConfig) -> CPAQuotaResponse {
-        CPAQuotaResponse(enabled: enabled, configured: configured, fetchedAt: fetchedAt,
-                         accounts: accounts.map { account in
-            guard !config.isAccountEnabled(account.id) else { return account }
-            return CPAAccountQuota(id: account.id, provider: account.provider, label: account.label,
-                                   plan: account.plan, enabled: false, windows: [], metrics: [], error: nil)
-        }, error: error)
-    }
 }
 
 struct CPAAccountQuota: Decodable, Equatable, Identifiable {
@@ -36,8 +24,6 @@ struct CPAAccountQuota: Decodable, Equatable, Identifiable {
     let provider: String
     let label: String
     let plan: String
-    let enabled: Bool?
-    var isEnabled: Bool { enabled ?? true }
     let windows: [CPAQuotaWindow]
     let metrics: [CPAQuotaMetric]
     let error: String?
@@ -91,21 +77,13 @@ struct CPAResetTracker {
         latestFetch = nil
     }
 
-    mutating func clear(accountID: String) {
-        let prefix = "cpa.\(accountID)."
-        snapshot.lastPercent = snapshot.lastPercent.filter { !$0.key.hasPrefix(prefix) }
-        snapshot.lastEventAt = snapshot.lastEventAt.filter { !$0.key.hasPrefix(prefix) }
-        snapshot.lastResetAt = snapshot.lastResetAt.filter { !$0.key.hasPrefix(prefix) }
-    }
-
     mutating func consume(_ response: CPAQuotaResponse, now: Double) -> [LimitResetEvent] {
         guard response.enabled else { clear(); return [] }
         guard response.error == nil,
               let fetched = CPAQuotaDate.parse(response.fetchedAt),
               latestFetch.map({ fetched > $0 }) ?? true else { return [] }
         latestFetch = fetched
-        for account in response.accounts where !account.isEnabled { clear(accountID: account.id) }
-        let readings = response.accounts.filter { $0.isEnabled && $0.error == nil }.flatMap { account in
+        let readings = response.accounts.filter { $0.error == nil }.flatMap { account in
             account.windows.compactMap { window -> (provider: String, windowKey: String, windowLabel: String, usedPercent: Double, resetAt: Double?)? in
                 guard window.usedPercent.isFinite, (0...100).contains(window.usedPercent) else { return nil }
                 return (

@@ -4,20 +4,15 @@ struct CPAQuotaView: View {
     @ObservedObject private var store = CPAQuotaStore.shared
     @ObservedObject private var localization = LocalizationObserver.shared
 
-    private var allAccountsDisabled: Bool {
-        guard let accounts = store.quotas?.accounts, !accounts.isEmpty else { return false }
-        return accounts.allSatisfy { !$0.isEnabled }
-    }
-
     var body: some View {
-        if store.config?.enabled == true && !allAccountsDisabled {
+        if store.config?.enabled == true {
             VStack(alignment: .leading, spacing: 10) {
                 SectionHeader(title: Strings.cpaTitle)
                 if store.unavailable || store.quotas?.error != nil {
                     Text(Strings.cpaUnavailable).font(.caption).foregroundStyle(.secondary)
                 } else if let quotas = store.quotas {
                     if quotas.accounts.isEmpty { Text(Strings.noData).font(.caption).foregroundStyle(.secondary) }
-                    ForEach(quotas.accounts.filter { $0.isEnabled }) { account in
+                    ForEach(quotas.accounts) { account in
                         VStack(alignment: .leading, spacing: 5) {
                             HStack {
                                 Text(account.label).lineLimit(1).help(account.label)

@@ -169,3 +169,25 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   split into small view properties after the initial compiler complexity error.
 - Version files synchronized to 1.4.6. Next: push the existing fork branch, verify
   the exact-commit cloud build and install its complete signed artifact.
+- Pushed 7514b4fa562dba1132eba9435d965bc5a6aaeb6c via SSH. Cloud run
+  38920686153 completed successfully, including native tests, universal build,
+  signing, DMG/ZIP packaging and upload. Artifact 12054831182 is 146315691 bytes,
+  sha256:161acdfdb2b4a0ff7eec8a66348462ec6ab30aa200266c40835d79d83aecdd80.
+- Real CPAMP verification used a temporary config: 4 accounts; disabling one
+  Codex reduced quota requests from 3 to 2, re-enabling restored 3. Existing
+  local config stayed byte-identical and server state was not changed.
+- PR description updated to explain the final independent switches and checks.
+  Normal browser artifact click yielded no new file; requested manual download.
+  Installation remains pending; installed application is still 1.4.5.
+
+## Simplified master switch (latest user direction)
+- 1.4.6 artifact was verified and installed with an intact config and a 1.4.5 backup.
+- User now requests a single master switch. This supersedes per-account switches.
+- Remove per-account selections and UI; reuse the existing global enabled setting
+  in the requested native gear popover below Devin. Keep the provider list scrollable.
+- Verify global disable/abort, re-enable baseline behavior and native view typecheck;
+  build 1.4.7 through the existing fork artifact workflow and replace 1.4.6.
+- Simplification verified: 47 focused backend/API/security/native reset/workflow
+  tests and 32 dashboard tests passed; production Swift model/API/store/views
+  typecheck and UI/architecture/version validators passed. Dashboard/backend
+  behavior now matches the previously tested CPAMP implementation exactly.

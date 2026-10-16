@@ -27,17 +27,3 @@ it("the card quick toggle persists the disabled state", async () => {
   await act(async () => userEvent.click(screen.getByRole("switch", { name: "cpa.enabled" })));
   expect(state.save).toHaveBeenCalledWith({ enabled: false });
 });
-
-it("hides disabled account quotas even when an older row still contains usage", () => {
-  state.config = { enabled: true, accountEnabled: { a: false } };
-  state.data = { enabled: true, accounts: [
-    { id: "a", label: "Hidden by config", windows: [], metrics: [] },
-    { id: "b", enabled: false, label: "Hidden by response", windows: [], metrics: [] },
-    { id: "c", label: "Still enabled", windows: [], metrics: [] },
-  ] };
-  render(<MemoryRouter><CPAQuotaPanel /></MemoryRouter>);
-  expect(screen.queryByText("Hidden by config")).toBeNull();
-  expect(screen.queryByText("Hidden by response")).toBeNull();
-  expect(screen.getByText("Still enabled")).toBeInTheDocument();
-  state.config = { enabled: true };
-});

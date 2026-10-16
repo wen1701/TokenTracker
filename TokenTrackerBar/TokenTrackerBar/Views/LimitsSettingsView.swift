@@ -88,75 +88,55 @@ struct LimitsSettingsView: View {
                 .opacity(0.35)
                 .padding(.bottom, 2)
 
-            accountAndProviderList
+            providerList
                 .padding(.bottom, 6)
         }
         .frame(width: 240)
     }
 
-    private var accountAndProviderList: some View {
+    private var providerList: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(store.providerOrder, id: \.self) { id in
-                    providerRow(id: id)
-                        .opacity(draggingId == id ? 0.4 : 1)
-                        .onDrag {
-                            draggingId = id
-                            return NSItemProvider(object: id as NSString)
-                        }
-                        .onDrop(of: [.text], delegate: ReorderDropDelegate(
-                            targetId: id,
-                            store: store,
-                            draggingId: $draggingId
-                        ))
+            VStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    ForEach(store.providerOrder, id: \.self) { id in
+                        providerRow(id: id)
+                            .opacity(draggingId == id ? 0.4 : 1)
+                            .onDrag {
+                                draggingId = id
+                                return NSItemProvider(object: id as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: ReorderDropDelegate(
+                                targetId: id,
+                                store: store,
+                                draggingId: $draggingId
+                            ))
+                    }
                 }
-                cpaAccountSection
+                Divider().opacity(0.35)
+                cpaToggle
             }
         }
-        .frame(height: listHeight)
+        .frame(height: min(CGFloat(store.providerOrder.count * 29 + 36), 460))
     }
 
-    private var listHeight: CGFloat {
-        let providerHeight = store.providerOrder.count * 29
-        let accountHeight = (cpa.quotas?.accounts.count ?? 0) * 43
-        return min(CGFloat(providerHeight + accountHeight + 40), 460)
-    }
-
-    @ViewBuilder
-    private var cpaAccountSection: some View {
-        if let accounts = cpa.quotas?.accounts, !accounts.isEmpty {
-            Divider().opacity(0.35)
-            Text(Strings.cpaAccounts)
-                .font(.caption).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12).padding(.top, 6)
-            ForEach(accounts) { account in
-                accountRow(account)
-            }
-        }
-    }
-
-    private func accountRow(_ account: CPAAccountQuota) -> some View {
+    private var cpaToggle: some View {
         HStack(spacing: 8) {
-            providerIcon(id: account.provider)
+            Image(systemName: "server.rack")
                 .frame(width: 14, height: 14)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(account.label).lineLimit(1).truncationMode(.middle)
-                    .font(.system(.body, design: .default))
-                Text(account.provider).font(.caption2).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
+                .foregroundStyle(.secondary)
+            Text(Strings.cpaTitle)
+                .font(.system(.body, design: .default))
+            Spacer()
             Toggle("", isOn: Binding(
-                get: { cpa.config?.isAccountEnabled(account.id) ?? account.isEnabled },
-                set: { enabled in Task { await cpa.setAccountEnabled(account.id, enabled: enabled) } }
+                get: { cpa.config?.enabled == true },
+                set: { enabled in Task { await cpa.setEnabled(enabled) } }
             ))
             .toggleStyle(.switch)
             .controlSize(.mini)
             .labelsHidden()
-            .disabled(cpa.updating)
-            .accessibilityLabel("\(Strings.cpaAccounts) · \(account.provider) · \(account.label)")
+            .disabled(cpa.updating || cpa.config?.hasManagementKey != true)
+            .accessibilityLabel(Strings.cpaEnabled)
         }
-        .help("\(account.provider) · \(account.label)")
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
     }
