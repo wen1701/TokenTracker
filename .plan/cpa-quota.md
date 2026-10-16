@@ -314,3 +314,54 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
 - Native model/API/store/view typecheck and version/UI/architecture validators
   passed. Added executable regression to the fork's required workflow; version
   files synchronized to 1.4.10. Next verify cloud tests/build and install.
+- Pushed 128a461f00213af1a0615581703e978bc266ac3f via SSH. Cloud run
+  38936096835 completed successfully with 51 focused backend/native/security
+  tests, 66 dashboard/preferences tests, validators, native XCTest, universal
+  app compilation, signing and packaging. Artifact 12061861124 is 146408221
+  bytes, SHA256 33d3890395fa9144092255fae0e88672e94daca9aa71e91583156bb581362e5d.
+- Requested manual download of the verified source-pinned 1.4.10 fix; current
+  installed version remains 1.4.9 pending artifact byte/signature verification.
+- User screenshot shows Chrome blocked TokenTracker-CPA-macOS (8).zip as a
+  dangerous download. Stop installation and do not fetch the same bytes through
+  alternate routes, rename/repackage around the warning or disable protections.
+- Read-only native Chrome download bubble confirmed the block. Attempt to open
+  details was interrupted when the user changed Chrome to another page; stopped
+  interacting with their unrelated page. Asked for the exact warning text.
+- Reviewed final source diff: only native startup/state recovery, version bumps,
+  regression test/workflow changes; no dependency or Node runtime version change.
+  Build uses ad-hoc signing and no notarization. Read-only identity lookup finds
+  zero Developer ID Application certificates. These facts do not prove a false
+  positive or identify Chrome's exact detection reason. Existing 1.4.9 remains
+  installed; no verification/installation of the blocked 1.4.10 bytes is claimed.
+- User supplied exact warning: "由于该文件具有危险性，Chrome 阻止了这次下载".
+  This is still a generic dangerous-file classification, without a named
+  malware family or concrete detection cause. Do not label it a false positive.
+  Safe temporary recovery for 1.4.9: opening the native status-item right-click
+  menu invokes its existing menuWillOpen CPA refresh, then reopening the gear
+  can use the reloaded config. Permanent code fix is built but installation is
+  blocked pending legitimate resolution of the download warning.
+- User notes all prior packages downloaded successfully. Acknowledged that old
+  builds also used ad-hoc signing/no notarization, so those facts alone do not
+  explain why Chrome blocked only the new package.
+- Recompared e968de9 (1.4.9) with 128a461 (1.4.10): no dependency, bundled Node
+  version or packaging-method changes; product changes are native CPA startup
+  recovery. Actual new blocked artifact bytes are unavailable, so no new/old
+  binary byte comparison is claimed. Local Node hash comparison only covered
+  two copies of 1.4.9, not the blocked 1.4.10 build.
+- Queried the public VirusTotal report by the intended outer artifact SHA256;
+  returned Item not found. No file was uploaded, no report of a clean scan is
+  claimed, and Chrome's exact detection basis remains unknown.
+
+## User-requested audited rebuild
+- User explicitly asks to rebuild. Keep product source/version at 1.4.10 and
+  rebuild in a clean GitHub runner to investigate the artifact, rather than
+  change packaging or hashes to evade Chrome's warning.
+- Add a component SHA256 inventory, source/environment/signature records, and
+  ClamAV scans of both the unarchived app and final DMG/ZIP. Fetch signatures
+  from the official ClamAV mirror; preserve updater/scanner logs separately.
+- Fail closed: updater errors, scanner errors, detections and scan-limit alerts
+  prevent installable artifact upload. Upload diagnostic reports even on failure.
+- Real scanner option names verified against Cisco-Talos/clamav optparser source.
+  POSIX shell syntax plus executable update/engine exit-code regression tests
+  and existing universal-binary workflow checks pass. No product changes or
+  version bump; scan results will not be presented as proof of a Chrome false positive.

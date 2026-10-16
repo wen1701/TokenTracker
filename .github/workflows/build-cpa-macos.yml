@@ -37,7 +37,7 @@ jobs:
 
       - name: Verify CPA behavior and shared API security
         run: |
-          node --test test/cpa.test.js test/local-api-cpa.test.js test/cpa-reset-native.test.js test/cpa-store-native.test.js test/cpa-macos-workflow.test.js test/limits-providers-parity.test.js test/limits-settings-cpa-native.test.js test/local-api-security.test.js test/usage-limits-singleflight.test.js
+          node --test test/cpa.test.js test/local-api-cpa.test.js test/cpa-reset-native.test.js test/cpa-store-native.test.js test/cpa-macos-workflow.test.js test/cpa-build-scan.test.js test/limits-providers-parity.test.js test/limits-settings-cpa-native.test.js test/local-api-security.test.js test/usage-limits-singleflight.test.js
           npm --prefix dashboard test -- src/hooks/use-limits-display-prefs.test.js src/hooks/use-cpa.test.js src/components/settings/CPASection.test.jsx src/components/CPAQuotaPanel.test.jsx src/pages/SettingsPage.test.jsx src/pages/LimitsPage.test.jsx
           npm --prefix dashboard run typecheck
           npm run validate:copy
@@ -53,7 +53,7 @@ jobs:
         run: bash TokenTrackerBar/scripts/bundle-node.sh
 
       - name: Install macOS build tools
-        run: brew install xcodegen create-dmg
+        run: brew install xcodegen create-dmg clamav
 
       - name: Generate Xcode project
         working-directory: TokenTrackerBar
@@ -123,7 +123,42 @@ jobs:
           cd ../dist-cpa
           shasum -a 256 TokenTracker-CPA-macOS.dmg TokenTracker-CPA-macOS.zip > SHA256SUMS.txt
 
+      - name: Record build provenance and component hashes
+        run: |
+          set -euo pipefail
+          app="$GITHUB_WORKSPACE/TokenTrackerBar/build/DerivedData/Build/Products/Release/TokenTracker.app"
+          report="$GITHUB_WORKSPACE/dist-cpa-audit"
+          mkdir -p "$report"
+          git rev-parse HEAD > "$report/SOURCE_SHA.txt"
+          sw_vers > "$report/BUILD_ENVIRONMENT.txt"
+          xcodebuild -version >> "$report/BUILD_ENVIRONMENT.txt"
+          node --version >> "$report/BUILD_ENVIRONMENT.txt"
+          "$app/Contents/Resources/EmbeddedServer/node" --version >> "$report/BUILD_ENVIRONMENT.txt"
+          cp dist-cpa/SHA256SUMS.txt "$report/ARCHIVE_SHA256SUMS.txt"
+          codesign -dv --verbose=4 "$app" 2> "$report/APP_SIGNATURE.txt"
+          cd "$app"
+          find . -type f -exec shasum -a 256 {} + | LC_ALL=C sort > "$report/APP_SHA256SUMS.txt"
+          find . -type l -ls > "$report/APP_SYMLINKS.txt"
+
+      - name: Scan app and archives with ClamAV
+        timeout-minutes: 15
+        run: |
+          bash scripts/scan-cpa-build.sh \
+            "$GITHUB_WORKSPACE/TokenTrackerBar/build/DerivedData/Build/Products/Release/TokenTracker.app" \
+            "$GITHUB_WORKSPACE/dist-cpa-audit" \
+            "$GITHUB_WORKSPACE/dist-cpa"
+
+      - name: Upload build audit reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: TokenTracker-CPA-build-audit
+          path: dist-cpa-audit/
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Upload installable test artifacts
+        if: success()
         uses: actions/upload-artifact@v7
         with:
           name: TokenTracker-CPA-macOS
@@ -140,6 +175,9 @@ jobs:
             echo "Source commit: $SOURCE_SHA"
             echo 'Download TokenTracker-CPA-macOS from the workflow artifacts.'
             echo 'Contains the DMG, a zipped app, and SHA256SUMS.txt.'
+            echo 'Build provenance, component hashes and ClamAV logs are in TokenTracker-CPA-build-audit.'
+            echo 'Installable artifacts are uploaded only when the signature database update and scan succeed.'
+            echo 'A clean scanner result does not establish that a browser warning was a false positive.'
             echo 'Includes CPA settings, menu quick toggle, account quotas and reset confetti.'
             echo 'Ad-hoc signed for testing; not Apple notarized. No release or npm publication was performed.'
           } >> "$GITHUB_STEP_SUMMARY"
