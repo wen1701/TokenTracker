@@ -535,6 +535,7 @@ struct DynamicIslandView: View {
             // providers must not push the island past the panel's bottom.
             ScrollView(.vertical, showsIndicators: false) {
                 UsageLimitsView(limits: viewModel.usageLimits, subscriptions: viewModel.subscriptions)
+                CPAQuotaView()
             }
             .frame(maxHeight: DynamicIslandLayoutPolicy.limitsHeight(panelHeight: state.panelSize.height))
 

@@ -2097,3 +2097,34 @@ cloud.rebuild.error,cloud,SettingsPage,CloudRebuildControl,error,Rebuild did not
 cloud.rebuild.busy,cloud,SettingsPage,CloudRebuildControl,busy,"Sync is running. Wait for it to finish, then retry.",,active
 usage.overview.kiro_notice_title,dashboard,DashboardPage,UsageOverview,kiro_notice_title,CLI token estimates,,active
 usage.overview.kiro_notice_body,dashboard,DashboardPage,UsageOverview,kiro_notice_body,"When Kiro CLI does not report token counts, tokens are estimated from new user messages, tool outputs and assistant text at ~4 characters/token. Re-sent history, system context and cache usage are not measured. Dollar amounts use model rates and do not represent Kiro credit charges.",,active
+cpa.title,ui,SettingsPage,CPASection,title,CPA Account Quotas,,active
+cpa.enabled,ui,SettingsPage,CPASection,enabled,Track CPA quotas,,active
+cpa.hint,ui,SettingsPage,CPASection,hint,Read account quotas from CLIProxyAPI. Turning this off stops CPA requests.,,active
+cpa.url,ui,SettingsPage,CPASection,url,CPA server URL,,active
+cpa.url_placeholder,ui,SettingsPage,CPASection,url_placeholder,https://cpa.example.com,,active
+cpa.key,ui,SettingsPage,CPASection,key,Management key,,active
+cpa.key_placeholder,ui,SettingsPage,CPASection,key_placeholder,Enter your management key,,active
+cpa.key_saved,ui,SettingsPage,CPASection,key_saved,Saved; leave blank to keep it,,active
+cpa.key_hint,ui,SettingsPage,CPASection,key_hint,Stored only by the local backend. It is never returned to the page or uploaded to the cloud.,,active
+cpa.save,ui,SettingsPage,CPASection,save,Save connection,,active
+cpa.saved,ui,SettingsPage,CPASection,saved,Connection saved. Use the switch to start or pause tracking.,,active
+cpa.save_error,ui,SettingsPage,CPASection,save_error,Could not save: {{error}},,active
+cpa.configure,ui,SettingsPage,CPASection,configure,Configure CPA connection,,active
+cpa.off,ui,SettingsPage,CPASection,off,CPA tracking is off.,,active
+cpa.loading,ui,SettingsPage,CPASection,loading,Loading CPA quotas…,,active
+cpa.empty,ui,SettingsPage,CPASection,empty,No enabled CPA accounts found.,,active
+cpa.remaining,ui,SettingsPage,CPASection,remaining,{{percent}}% remaining,,active
+cpa.resets,ui,SettingsPage,CPASection,resets,Resets: {{time}},,active
+cpa.credits,ui,SettingsPage,CPASection,credits,Credits,,active
+cpa.updated,ui,SettingsPage,CPASection,updated,Updated: {{time}},,active
+cpa.error.invalid_config,ui,SettingsPage,CPASection,error_invalid_config,Invalid connection settings.,,active
+cpa.error.invalid_url,ui,SettingsPage,CPASection,error_invalid_url,Enter a valid server URL without credentials or query parameters.,,active
+cpa.error.configuration_required,ui,SettingsPage,CPASection,error_configuration_required,Save the server URL and management key before enabling CPA.,,active
+cpa.error.unauthorized,ui,SettingsPage,CPASection,error_unauthorized,Authorization failed. Check the management key or account sign-in.,,active
+cpa.error.forbidden,ui,SettingsPage,CPASection,error_forbidden,Access denied by CPA or the upstream provider.,,active
+cpa.error.not_found,ui,SettingsPage,CPASection,error_not_found,Quota endpoint is unavailable on this CPA instance.,,active
+cpa.error.rate_limited,ui,SettingsPage,CPASection,error_rate_limited,Quota requests are rate limited. Try again later.,,active
+cpa.error.timeout,ui,SettingsPage,CPASection,error_timeout,Quota request timed out.,,active
+cpa.error.unavailable,ui,SettingsPage,CPASection,error_unavailable,Could not reach the quota service. Check the connection.,,active
+cpa.error.unsupported,ui,SettingsPage,CPASection,error_unsupported,No quota provider is available for this account.,,active
+cpa.error.invalid_response,ui,SettingsPage,CPASection,error_invalid_response,The provider did not return usable quota data.,,active

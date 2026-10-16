@@ -7,6 +7,7 @@ import { useUsageLimits } from "../hooks/use-usage-limits";
 import { useLimitsDisplayPrefs } from "../hooks/use-limits-display-prefs.js";
 import { copy, getCopyLocale } from "../lib/copy";
 import { LimitsPageSkeleton } from "../components/LimitsPageSkeleton.jsx";
+import { CPAQuotaPanel } from "../components/CPAQuotaPanel.jsx";
 import { UsageLimitsPanel } from "../ui/dashboard/components/UsageLimitsPanel.jsx";
 import { SubscriptionSettingsCard } from "../ui/dashboard/components/SubscriptionSettingsCard.jsx";
 import { LocalOnlyNotice } from "../components/LocalOnlyNotice.jsx";
@@ -286,6 +287,7 @@ export function LimitsPage() {
             </p>
           ) : null}
 
+          <CPAQuotaPanel />
           {isLoading ? (
             <LimitsPageSkeleton />
           ) : (

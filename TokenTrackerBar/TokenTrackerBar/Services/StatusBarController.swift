@@ -90,6 +90,7 @@ final class StatusBarController: NSObject {
         observeNativeBridgeSettings()
         observeApplicationActivity()
         observeWeeklyLimitReset()
+        _ = CPAQuotaStore.shared
         scheduleDebugLimitResetCelebrationIfRequested()
     }
 
@@ -1141,6 +1142,13 @@ final class StatusBarController: NSObject {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        let cpaItem = NSMenuItem(title: Strings.cpaEnabled, action: #selector(toggleCPA), keyEquivalent: "")
+        cpaItem.target = self
+        cpaItem.tag = 4_243
+        cpaItem.state = CPAQuotaStore.shared.config?.enabled == true ? .on : .off
+        cpaItem.isEnabled = !CPAQuotaStore.shared.updating
+        menu.addItem(cpaItem)
+
         menu.addItem(.separator())
 
         // ── Group 2: Display Surfaces & Components ──
@@ -1358,6 +1366,15 @@ final class StatusBarController: NSObject {
         DashboardWindowController.shared.showSettings()
     }
 
+    @objc private func toggleCPA() {
+        let store = CPAQuotaStore.shared
+        guard let config = store.config, config.hasManagementKey, !config.baseUrl.isEmpty else {
+            openDashboardSettings()
+            return
+        }
+        Task { await store.setEnabled(!config.enabled) }
+    }
+
     @objc private func checkForUpdates() {
         UpdateChecker.shared.check(silent: false)
     }
@@ -1484,6 +1501,12 @@ final class StatusBarController: NSObject {
 extension StatusBarController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         trackedStatusMenu = menu
+        Task { @MainActor [weak self] in
+            await CPAQuotaStore.shared.refresh()
+            guard self?.trackedStatusMenu === menu, let item = menu.item(withTag: 4_243) else { return }
+            item.state = CPAQuotaStore.shared.config?.enabled == true ? .on : .off
+            item.isEnabled = !CPAQuotaStore.shared.updating
+        }
         updateMenuStatusObserver = NotificationCenter.default.addObserver(
             forName: .updateCheckerStatusDidChange,
             object: UpdateChecker.shared,

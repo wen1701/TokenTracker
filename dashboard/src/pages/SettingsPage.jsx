@@ -18,6 +18,8 @@ import { NetworkSection } from "../components/settings/NetworkSection.jsx";
 import { LIMIT_DISPLAY_MODES, useLimitsDisplayPrefs } from "../hooks/use-limits-display-prefs.js";
 import { useNativeSettings } from "../hooks/use-native-settings.js";
 import { useProxySettings } from "../hooks/use-proxy-settings.js";
+import { useCPA } from "../hooks/use-cpa.js";
+import { CPASection } from "../components/settings/CPASection.jsx";
 import { cn } from "../lib/cn";
 import { copy } from "../lib/copy";
 import { isNativeWindowsApp } from "../lib/native-bridge.js";
@@ -27,6 +29,7 @@ const SETTINGS_SECTION_IDS = {
   APPEARANCE: "appearance",
   NATIVE_APP: "native-app",
   NETWORK: "network",
+  CPA: "cpa",
   ACCOUNT: "account",
   CLOUD: "cloud",
   LIMITS: "limits",
@@ -61,6 +64,7 @@ export function SettingsPage() {
     setSetting: setNativeSetting,
   } = useNativeSettings();
   const proxySettings = useProxySettings();
+  const cpa = useCPA();
   const { available: proxySettingsAvailable } = proxySettings;
   const toastOnReset = nativeSettings?.toastOnReset !== false;
   const confettiOnReset = nativeSettings?.confettiOnReset !== false;
@@ -72,7 +76,8 @@ export function SettingsPage() {
   const requestedSectionAvailable =
     Object.values(SETTINGS_SECTION_IDS).includes(requestedSection) &&
     (requestedSection !== SETTINGS_SECTION_IDS.NATIVE_APP || nativeSettingsAvailable) &&
-    (requestedSection !== SETTINGS_SECTION_IDS.NETWORK || proxySettingsAvailable);
+    (requestedSection !== SETTINGS_SECTION_IDS.NETWORK || proxySettingsAvailable) &&
+    (requestedSection !== SETTINGS_SECTION_IDS.CPA || cpa.available);
   const activeSection = requestedSectionAvailable
     ? requestedSection
     : SETTINGS_SECTION_IDS.APPEARANCE;
@@ -116,6 +121,14 @@ export function SettingsPage() {
           content: <NetworkSection proxySettings={proxySettings} />,
         }]
       : []),
+    ...(cpa.available ? [{
+      id: SETTINGS_SECTION_IDS.CPA,
+      label: copy("cpa.title"),
+      description: copy("cpa.hint"),
+      group: SETTINGS_GROUP_IDS.APP,
+      Icon: Globe,
+      content: <CPASection cpa={cpa} />,
+    }] : []),
     {
       id: SETTINGS_SECTION_IDS.ACCOUNT,
       label: copy("settings.section.account"),

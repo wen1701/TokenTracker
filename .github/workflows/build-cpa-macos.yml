@@ -1,0 +1,145 @@
+name: Build CPA macOS test app
+
+on:
+  push:
+    branches: [codex/cpa-quota-build]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cpa-macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.repository == 'wen1701/TokenTracker'
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          npm ci --prefix dashboard --no-audit --no-fund
+
+      - name: Verify CPA behavior and shared API security
+        run: |
+          node --test test/cpa.test.js test/local-api-cpa.test.js test/cpa-reset-native.test.js test/local-api-security.test.js test/usage-limits-singleflight.test.js
+          npm --prefix dashboard test -- src/hooks/use-cpa.test.js src/components/settings/CPASection.test.jsx src/components/CPAQuotaPanel.test.jsx src/pages/SettingsPage.test.jsx src/pages/LimitsPage.test.jsx
+          npm --prefix dashboard run typecheck
+          npm run validate:copy
+          npm run validate:locale
+          npm run validate:guardrails
+          npm run validate:ui-hardcode
+          npm run validate:versions
+
+      - name: Build dashboard
+        run: npm run dashboard:build
+
+      - name: Bundle embedded runtime
+        run: bash TokenTrackerBar/scripts/bundle-node.sh
+
+      - name: Install macOS build tools
+        run: brew install xcodegen create-dmg
+
+      - name: Generate Xcode project
+        working-directory: TokenTrackerBar
+        run: |
+          xcodegen generate
+          ruby scripts/patch-pbxproj-icon.rb
+
+      - name: Test native models
+        working-directory: TokenTrackerBar
+        run: |
+          xcodebuild test \
+            -scheme TokenTrackerBarTests \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build universal app
+        working-directory: TokenTrackerBar
+        run: |
+          xcodebuild \
+            -scheme TokenTrackerBar \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS="\$(inherited) -Xfrontend -solver-expression-time-threshold=120" \
+            build
+
+      - name: Verify and sign the complete app
+        working-directory: TokenTrackerBar
+        run: |
+          set -euo pipefail
+          app="build/DerivedData/Build/Products/Release/TokenTracker.app"
+          runtime="$app/Contents/Resources/EmbeddedServer"
+          test -x "$runtime/node"
+          test -f "$runtime/tokentracker/src/lib/cpa.js"
+          test -f "$runtime/tokentracker/dashboard/dist/index.html"
+          /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist"
+          lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/TokenTracker"
+          lipo -verify_arch arm64 x86_64 "$runtime/node"
+          find "$runtime" -type f \
+            \( -name node -o -name '*.dylib' -o -name '*.so' -o -name '*.node' \) \
+            -exec codesign --force --timestamp=none --sign - {} \;
+          extension="$app/Contents/PlugIns/TokenTrackerWidget.appex"
+          test -d "$extension"
+          codesign --force --timestamp=none \
+            --entitlements TokenTrackerWidget/TokenTrackerWidget.entitlements \
+            --sign - "$extension"
+          codesign --force --timestamp=none \
+            --entitlements TokenTrackerBar/TokenTrackerBar.entitlements \
+            --sign - "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -d --entitlements - "$extension" 2>&1 | grep -q 'com.apple.security.app-sandbox'
+
+      - name: Package DMG and app archive
+        working-directory: TokenTrackerBar
+        run: |
+          set -euo pipefail
+          app="$PWD/build/DerivedData/Build/Products/Release/TokenTracker.app"
+          bash scripts/create-dmg.sh "$app"
+          mkdir -p ../dist-cpa
+          cp build/TokenTrackerBar.dmg ../dist-cpa/TokenTracker-CPA-macOS.dmg
+          ditto -c -k --sequesterRsrc --keepParent "$app" ../dist-cpa/TokenTracker-CPA-macOS.zip
+          cd ../dist-cpa
+          shasum -a 256 TokenTracker-CPA-macOS.dmg TokenTracker-CPA-macOS.zip > SHA256SUMS.txt
+
+      - name: Upload installable test artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: TokenTracker-CPA-macOS
+          path: dist-cpa/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Describe build
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          {
+            echo '## CPA macOS test build'
+            echo "Source commit: $SOURCE_SHA"
+            echo 'Download TokenTracker-CPA-macOS from the workflow artifacts.'
+            echo 'Contains the DMG, a zipped app, and SHA256SUMS.txt.'
+            echo 'Includes CPA settings, menu quick toggle, account quotas and reset confetti.'
+            echo 'Ad-hoc signed for testing; not Apple notarized. No release or npm publication was performed.'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -6,6 +6,7 @@ import {
   resetDashboardPreload,
 } from "../lib/dashboard-preload.js";
 import { LimitsPage } from "./LimitsPage.jsx";
+vi.mock("../components/CPAQuotaPanel.jsx", () => ({ CPAQuotaPanel: () => null }));
 
 const useUsageLimitsMock = vi.hoisted(() => vi.fn());
 const useLimitsDisplayPrefsMock = vi.hoisted(() => vi.fn());
