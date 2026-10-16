@@ -19,6 +19,7 @@ export const LIMIT_PROVIDER_IDS = [
   "codingPlan",
   "agentPlan",
   "devin",
+  "cpa",
 ];
 
 /** Keys for ProviderIcon — mono logos use inline SVG; colored logos use /brand-logos/. */

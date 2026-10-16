@@ -93,7 +93,9 @@ function ProviderRow({ id, visible, onToggle }) {
  * `prefs` is the return value of `useLimitsDisplayPrefs()`.
  */
 export function LimitsSettingsPanel({ prefs }) {
-  const { order, visibility, toggle, setAllVisible, moveToward } = prefs;
+  const { order: providerOrder, visibility, toggle, setAllVisible, moveToward } = prefs;
+  // CPA keeps its authenticated master switch in connection settings on the web.
+  const order = providerOrder.filter((id) => id !== "cpa");
   const allVisible = order.every((id) => visibility[id] !== false);
   const allHidden = order.every((id) => visibility[id] === false);
   const enabledCount = order.filter((id) => visibility[id] !== false).length;

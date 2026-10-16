@@ -191,3 +191,39 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   tests and 32 dashboard tests passed; production Swift model/API/store/views
   typecheck and UI/architecture/version validators passed. Dashboard/backend
   behavior now matches the previously tested CPAMP implementation exactly.
+- Pushed ac2ed94b6f50b9f2ddf41f6b59f612fac89e7f8b over SSH. Cloud run
+  38923080577 completed successfully with all native, frontend, signing and
+  packaging steps. Artifact 12055913285 is 146416947 bytes, archive SHA256
+  c22aed1080718df7383075b0ba2b3565a32dd8b18dbfec603939dd2663d26067.
+- Final PR description now documents a single shared master switch. Requested
+  the new 1.4.7 download because automated artifact downloads are unavailable.
+  Pending installation; current installed version remains 1.4.6.
+- User downloaded 1.4.7. Verified the GitHub archive digest, inner app archive
+  checksum, deep/strict code signature, bundle identity and universal architecture.
+  Normal-quit 1.4.6, backed it up, installed and launched 1.4.7. Config remained
+  byte-identical through installation. Installed version confirmed from Info.plist.
+- Verified the installed local API master off/on behavior: disabled account list
+  empty; restored original enabled state returned 4 accounts via CPAMP v0 with no
+  global error. CPA configuration including credentials remained identical after
+  the probe. Current master switch is enabled. Native gear view compiled in CI;
+  its visual interaction was not directly exercised by the automation.
+
+## CPA as a regular provider (latest screenshot)
+- User points out CPA must be an item in the existing provider list, rather
+  than a separate row below a divider. Preserve the single backend master switch.
+- Share the normal row, drag/drop and persisted provider order with other providers.
+- Asked whether the main quota block should also join the existing Limits area;
+  inspect the shared layout while awaiting that scope clarification.
+- Verify ordering persistence/bridge compatibility, shared master switch behavior,
+  native types/build, and the installed native appearance before completing.
+- User clarified with a second screenshot: CPA is a peer type in the upper
+  provider list. Only the gear list is changing; main quota layout is unchanged.
+- CPA now goes through the exact same providerRow, drag handle, onDrag/onDrop
+  and persisted order as Claude/Codex/Devin. Its checked state still comes from
+  authenticated CPA config, preserving one master switch across all entry points.
+- Dashboard registry preserves the CPA order slot through the native bridge;
+  web connection settings remain the CPA control, avoiding a second visibility flag.
+- Verified 49 backend/API/security/reset/workflow/native ordering tests and
+  65 frontend/preferences tests, production native model/API/store/view typecheck,
+  dashboard typecheck/build, copy/locale/UI/architecture/version validators.
+- Version 1.4.8 is ready for the fork macOS workflow.

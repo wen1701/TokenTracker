@@ -97,48 +97,22 @@ struct LimitsSettingsView: View {
     private var providerList: some View {
         ScrollView {
             VStack(spacing: 0) {
-                VStack(spacing: 0) {
-                    ForEach(store.providerOrder, id: \.self) { id in
-                        providerRow(id: id)
-                            .opacity(draggingId == id ? 0.4 : 1)
-                            .onDrag {
-                                draggingId = id
-                                return NSItemProvider(object: id as NSString)
-                            }
-                            .onDrop(of: [.text], delegate: ReorderDropDelegate(
-                                targetId: id,
-                                store: store,
-                                draggingId: $draggingId
-                            ))
-                    }
+                ForEach(store.providerOrder, id: \.self) { id in
+                    providerRow(id: id)
+                        .opacity(draggingId == id ? 0.4 : 1)
+                        .onDrag {
+                            draggingId = id
+                            return NSItemProvider(object: id as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: ReorderDropDelegate(
+                            targetId: id,
+                            store: store,
+                            draggingId: $draggingId
+                        ))
                 }
-                Divider().opacity(0.35)
-                cpaToggle
             }
         }
         .frame(height: min(CGFloat(store.providerOrder.count * 29 + 36), 460))
-    }
-
-    private var cpaToggle: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "server.rack")
-                .frame(width: 14, height: 14)
-                .foregroundStyle(.secondary)
-            Text(Strings.cpaTitle)
-                .font(.system(.body, design: .default))
-            Spacer()
-            Toggle("", isOn: Binding(
-                get: { cpa.config?.enabled == true },
-                set: { enabled in Task { await cpa.setEnabled(enabled) } }
-            ))
-            .toggleStyle(.switch)
-            .controlSize(.mini)
-            .labelsHidden()
-            .disabled(cpa.updating || cpa.config?.hasManagementKey != true)
-            .accessibilityLabel(Strings.cpaEnabled)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
     }
 
     private func providerRow(id: String) -> some View {
@@ -156,12 +130,19 @@ struct LimitsSettingsView: View {
             Spacer()
 
             Toggle("", isOn: Binding(
-                get: { store.isVisible(id) },
-                set: { store.setProviderVisibilityFromMenu(id, isVisible: $0) }
+                get: { id == "cpa" ? cpa.config?.enabled == true : store.isVisible(id) },
+                set: { visible in
+                    if id == "cpa" {
+                        Task { await cpa.setEnabled(visible) }
+                    } else {
+                        store.setProviderVisibilityFromMenu(id, isVisible: visible)
+                    }
+                }
             ))
             .toggleStyle(.switch)
             .controlSize(.mini)
             .labelsHidden()
+            .disabled(id == "cpa" && (cpa.updating || cpa.config?.hasManagementKey != true))
             .accessibilityLabel(LimitsSettingsStore.displayNames[id] ?? id)
         }
         .padding(.horizontal, 12)
@@ -181,6 +162,8 @@ struct LimitsSettingsView: View {
     @ViewBuilder
     private func providerIcon(id: String) -> some View {
         switch id {
+        case "cpa":
+            Image(systemName: "server.rack").foregroundStyle(.secondary)
         case "cursor", "kimi", "kiro", "grok", "copilot", "zcode", "opencodeGo", "commandCode", "qoder", "qoderCn", "codingPlan", "agentPlan", "devin":
             let filename: String = {
                 switch id {
