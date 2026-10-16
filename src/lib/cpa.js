@@ -173,8 +173,11 @@ function createCPAIntegration({ configPath, fetchImpl = fetch, now = Date.now })
   }
 
   async function load(config, controller) {
+    let apiVersion = "v8";
     const request = async (route, payload) => {
-      const response = await fetchImpl(`${config.baseUrl}/v8/management${route}`, {
+      const legacyRoutes = { "/credentials": "/auth-files", "/requests/api-call": "/api-call" };
+      const endpoint = apiVersion === "v0" ? legacyRoutes[route] || route : route;
+      const response = await fetchImpl(`${config.baseUrl}/${apiVersion}/management${endpoint}`, {
         method: payload ? "POST" : "GET",
         headers: { Authorization: `Bearer ${config.managementKey}`, "Content-Type": "application/json" },
         ...(payload ? { body: JSON.stringify(payload) } : {}),
@@ -185,7 +188,16 @@ function createCPAIntegration({ configPath, fetchImpl = fetch, now = Date.now })
       if (!body || typeof body !== "object") throw new Error("invalid_response");
       return body;
     };
-    const response = await request("/credentials");
+    let response;
+    try {
+      response = await request("/credentials");
+    } catch (error) {
+      // CPAMP forwards legacy management routes. Only a missing discovery route
+      // permits negotiation; authentication errors must never trigger fallback.
+      if (error.message !== "not_found") throw error;
+      apiVersion = "v0";
+      response = await request("/credentials");
+    }
     if (!Array.isArray(response.files)) throw new Error("invalid_response");
     const accounts = response.files.filter((a) => !a.disabled && a.auth_index);
     const results = new Array(accounts.length);
@@ -199,9 +211,11 @@ function createCPAIntegration({ configPath, fetchImpl = fetch, now = Date.now })
         const row = { id, provider, label: text(account.label || account.email || account.name || `${provider} ${index + 1}`), plan: "", windows: [], metrics: [], error: null };
         try {
           let normalized;
-          if (account.supports_quota && account.quota_plugin_id) {
+          if (account.supports_quota && (account.quota_plugin_id || apiVersion === "v0")) {
             try {
-              const body = await request(`/plugins/${encodeURIComponent(account.quota_plugin_id)}/quota?auth_index=${encodeURIComponent(account.auth_index)}`);
+              const body = apiVersion === "v0"
+                ? await request("/quota/fetch", { auth_index: account.auth_index })
+                : await request(`/plugins/${encodeURIComponent(account.quota_plugin_id)}/quota?auth_index=${encodeURIComponent(account.auth_index)}`);
               normalized = normalizePlugin(body);
             } catch (error) {
               if (!["not_found", "unsupported"].includes(error.message)) throw error;
@@ -232,7 +246,7 @@ function createCPAIntegration({ configPath, fetchImpl = fetch, now = Date.now })
     };
     await Promise.all(Array.from({ length: Math.min(3, accounts.length) }, worker));
     if (controller.signal.aborted) throw new Error("timeout");
-    return { enabled: true, configured: true, fetched_at: new Date(now()).toISOString(), accounts: results, error: null };
+    return { enabled: true, configured: true, api_version: apiVersion, fetched_at: new Date(now()).toISOString(), accounts: results, error: null };
   }
 
   async function getLimits() {

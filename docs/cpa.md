@@ -6,8 +6,11 @@ change the existing token usage queue or official-provider quota checks.
 ## Setup
 
 1. Open **Settings → CPA Account Quotas** in the local dashboard.
-2. Save the CPA server root URL (without `/v1` or `/v8/management`) and its
-   management key. The model-inference client key is a different credential.
+2. Save the CPA or CPAMP server root URL (without `/v1` or a management API path).
+   Direct CPA connections use the CPA management key. Connections through CPAMP
+   use its **CPAMP admin key**: the manager verifies that key, then substitutes
+   its saved upstream CPA management key. The model-inference client key is a
+   different credential.
 3. Enable **Track CPA quotas**. Account quotas appear on the Limits page and in
    the macOS popover and expanded Dynamic Island.
 4. Use **Track CPA Quotas** in the macOS status-item menu to pause or resume.
@@ -22,11 +25,19 @@ a remote CPA instance; this feature does not change CPA's management policy.
 
 ## Supported queries
 
-- v8 account discovery: `GET /v8/management/credentials`.
+- v8 account discovery: `GET /v8/management/credentials`. If and only if this
+  discovery route returns 404, negotiate the v0 compatibility API using
+  `GET /v0/management/auth-files`. This supports CPAMP's existing management
+  forwarding without exposing another CPA port. Authentication failures never
+  trigger a fallback.
 - Installed quota plugins: `GET /v8/management/plugins/{id}/quota?auth_index=...`.
 - Codex and Claude accounts without a quota plugin: the existing
   `POST /v8/management/requests/api-call` delegates the quota query to the account's
-  official upstream endpoint. CPA substitutes `$TOKEN$` on the server.
+  official upstream endpoint. CPA substitutes `$TOKEN$` on the server. A negotiated
+  v0/CPAMP connection uses `POST /v0/management/api-call` throughout the query;
+  account-level failures never change the connection's selected API version.
+- v0 quota-capable accounts use `/v0/management/quota/fetch` for normalized
+  plugin/probe queries, including deployments without a `quota_plugin_id` field.
 - Other account types require an available quota plugin; unsupported accounts
   are explicitly labelled rather than represented as an exhausted quota.
 

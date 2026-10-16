@@ -78,3 +78,41 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   the subsequent architecture check failed because lipo's variadic -verify_arch
   option was placed before the input filename. Corrected the command order and
   added an executable regression using real fat/thin Mach-O object fixtures.
+- Final: fix bda03aed11ce67bf69c82d41b0ddfac1aa19272a pushed through SSH.
+  https://github.com/wen1701/TokenTracker/actions/runs/38910839644 completed
+  successfully, including native tests, universal app compilation, architecture
+  checks, signing, DMG/ZIP packaging and artifact upload.
+- Artifact 12050064649: TokenTracker-CPA-macOS, 146429649 bytes, expires
+  2026-11-15T13:56:38Z, archive digest
+  sha256:d0dc47c694e3b625b3403b7e4ded7cdbc444ad40eeb94730c2e7f287b7241d16.
+- Draft PR created and attached: https://github.com/wen1701/TokenTracker/pull/1.
+- Direct authenticated browser download timed out; no local artifact byte/hash
+  verification or installation is claimed. The cloud build and artifact metadata
+  were verified. Fork main, CPA server and installed application remain unchanged.
+
+## User-authorized local installation
+- User downloaded the artifact and explicitly requested replacing the local app.
+- Verified Downloads/TokenTracker-CPA-macOS.zip against the GitHub archive digest,
+  extracted and checked the inner app ZIP digest, 1.4.4 bundle identity, deep
+  strict code signature and both arm64/x86_64 architectures.
+- Quit the old app through its normal native menu; backed up and moved the
+  original 1.3.14 bundle into work/cpa-install/backup before replacing it.
+- Installed /Applications/TokenTracker.app and launched it through the native app API.
+- Verified process running, installed version 1.4.4, original config byte-identical,
+  authenticated CPA config endpoint HTTP 200, and visible native CPA settings.
+- CPA remains disabled with no saved management key. Saved installation screenshot
+  and record under outputs. No credentials exposed, no CPA server settings changed.
+
+## CPAMP compatibility repair
+- User enabled CPA using https://cpamp.purrtides.com and reported endpoint missing.
+- Verified local client: /v8/management/credentials = 404;
+  /v0/management/auth-files = 401 invalid admin key using the saved CPA key.
+- Read CPAMP routing/auth source: only v0 management paths are forwarded and
+  CPAMP admin authentication substitutes its saved upstream CPA management key.
+- On the 172 server, confirmed CPAMP account list and both Codex/Claude upstream
+  quota requests succeed with CPAMP admin authentication. No server changes needed.
+- Added discovery-only 404 negotiation to v0, pinned account queries to the selected
+  API version, and v0 normalized plugin/probe support. 11 backend/API tests pass,
+  including authentication fail-closed behavior and no account-error downgrades.
+- Updating credential hints and packaging 1.4.5. User input requested on whether
+  to securely copy the existing CPAMP admin key to the local app or let them enter it.

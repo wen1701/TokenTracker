@@ -2105,7 +2105,7 @@ cpa.url_placeholder,ui,SettingsPage,CPASection,url_placeholder,https://cpa.examp
 cpa.key,ui,SettingsPage,CPASection,key,Management key,,active
 cpa.key_placeholder,ui,SettingsPage,CPASection,key_placeholder,Enter your management key,,active
 cpa.key_saved,ui,SettingsPage,CPASection,key_saved,Saved; leave blank to keep it,,active
-cpa.key_hint,ui,SettingsPage,CPASection,key_hint,Stored only by the local backend. It is never returned to the page or uploaded to the cloud.,,active
+cpa.key_hint,ui,SettingsPage,CPASection,key_hint,Direct CPA connections use the CPA management key; CPAMP connections use the CPAMP admin key. Stored only by the local backend and never returned to the page or uploaded to the cloud.,,active
 cpa.save,ui,SettingsPage,CPASection,save,Save connection,,active
 cpa.saved,ui,SettingsPage,CPASection,saved,Connection saved. Use the switch to start or pause tracking.,,active
 cpa.save_error,ui,SettingsPage,CPASection,save_error,Could not save: {{error}},,active
@@ -2120,7 +2120,7 @@ cpa.updated,ui,SettingsPage,CPASection,updated,Updated: {{time}},,active
 cpa.error.invalid_config,ui,SettingsPage,CPASection,error_invalid_config,Invalid connection settings.,,active
 cpa.error.invalid_url,ui,SettingsPage,CPASection,error_invalid_url,Enter a valid server URL without credentials or query parameters.,,active
 cpa.error.configuration_required,ui,SettingsPage,CPASection,error_configuration_required,Save the server URL and management key before enabling CPA.,,active
-cpa.error.unauthorized,ui,SettingsPage,CPASection,error_unauthorized,Authorization failed. Check the management key or account sign-in.,,active
+cpa.error.unauthorized,ui,SettingsPage,CPASection,error_unauthorized,"Authorization failed. Check the CPA management key or CPAMP admin key, and the account sign-in.",,active
 cpa.error.forbidden,ui,SettingsPage,CPASection,error_forbidden,Access denied by CPA or the upstream provider.,,active
 cpa.error.not_found,ui,SettingsPage,CPASection,error_not_found,Quota endpoint is unavailable on this CPA instance.,,active
 cpa.error.rate_limited,ui,SettingsPage,CPASection,error_rate_limited,Quota requests are rate limited. Try again later.,,active

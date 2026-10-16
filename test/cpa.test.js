@@ -133,3 +133,57 @@ test("management HTTP 200 does not hide upstream 429 or malformed quota data", a
   await service.saveConfig(enabled);
   assert.equal((await service.getLimits()).accounts[0].error, "rate_limited");
 });
+
+test("CPAMP v0 discovery selects legacy forwarding paths for account quota calls", async (t) => {
+  const calls = [];
+  const { service } = await fixture(t, async (url, options) => {
+    calls.push({ url, method: options.method });
+    if (url.endsWith("/v8/management/credentials")) return response({}, 404);
+    if (url.endsWith("/v0/management/auth-files")) return response({ files: [
+      { auth_index: "codex-a", provider: "codex" },
+      { auth_index: "claude-a", provider: "claude" },
+      { auth_index: "plugin-a", provider: "antigravity", supports_quota: true },
+    ] });
+    if (url.endsWith("/v0/management/quota/fetch")) {
+      assert.deepEqual(JSON.parse(options.body), { auth_index: "plugin-a" });
+      return response({ groups: [{ displayName: "Gemini", buckets: [{ window: "daily", remainingFraction: 0.5 }] }] });
+    }
+    assert.ok(url.endsWith("/v0/management/api-call"));
+    const request = JSON.parse(options.body);
+    assert.equal(request.header.Authorization, "Bearer $TOKEN$");
+    return response({ status_code: 200, body: JSON.stringify(request.auth_index === "codex-a"
+      ? { rate_limit: { primary_window: { used_percent: 38, limit_window_seconds: 18000 } } }
+      : { seven_day: { utilization: 90, resets_at: "2026-10-23T00:00:00Z" } }) });
+  });
+  await service.saveConfig(enabled);
+  const limits = await service.getLimits();
+  assert.equal(limits.error, null);
+  assert.equal(limits.api_version, "v0");
+  assert.deepEqual(limits.accounts.map((a) => a.windows[0].used_percent), [38, 90, 50]);
+  assert.equal(calls.length, 5);
+  await service.getLimits();
+  assert.equal(calls.length, 5, "cached polls must not repeat discovery");
+});
+
+test("management authentication failures never negotiate another API version", async (t) => {
+  for (const status of [401, 403]) {
+    let calls = 0;
+    const { service } = await fixture(t, async () => { calls++; return response({}, status); });
+    await service.saveConfig(enabled);
+    assert.equal((await service.getLimits()).error, status === 401 ? "unauthorized" : "forbidden");
+    assert.equal(calls, 1);
+  }
+});
+
+test("a v8 account-level 404 does not downgrade the already-negotiated connection", async (t) => {
+  const calls = [];
+  const { service } = await fixture(t, async (url) => {
+    calls.push(url);
+    return url.endsWith("/credentials") ? response({ files: [{ provider: "codex", auth_index: "a" }] }) : response({}, 404);
+  });
+  await service.saveConfig(enabled);
+  const limits = await service.getLimits();
+  assert.equal(limits.api_version, "v8");
+  assert.equal(limits.accounts[0].error, "not_found");
+  assert.equal(calls.some((url) => url.includes("/v0/")), false);
+});
