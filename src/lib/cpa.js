@@ -4,7 +4,7 @@ const fs = require("node:fs/promises");
 const crypto = require("node:crypto");
 const { writeFileAtomic, chmod600IfPossible } = require("./fs");
 
-const CACHE_MS = 60_000;
+const CACHE_MS = 5 * 60_000;
 const TIMEOUT_MS = 20_000;
 
 function publicConfig(config) {

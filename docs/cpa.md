@@ -45,7 +45,7 @@ Codex Credits remain credits, not a dollar balance. Plugin currency summaries
 retain the provider's currency. Missing windows, unknown reset times and failed
 queries are not converted to zero usage or zero balance.
 
-The backend caches results for 60 seconds, bounds concurrency to three accounts,
+The backend caches results for five minutes, bounds concurrency to three accounts,
 and applies a 20-second total query deadline. Disabling or editing the connection
 aborts its pending query, invalidates the cache and discards superseded results.
 

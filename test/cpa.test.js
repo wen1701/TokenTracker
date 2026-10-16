@@ -126,6 +126,38 @@ test("switching off aborts in-flight work and cannot republish the old response"
   assert.deepEqual((await service.getLimits()).accounts, []);
 });
 
+test("quota queries reuse five minutes of cache while re-enabling fetches immediately", async (t) => {
+  let time = Date.parse("2026-10-17T00:00:00Z");
+  let calls = 0;
+  const { service } = await fixture(t, async (url) => {
+    calls++;
+    return url.endsWith("/credentials")
+      ? response({ files: [{ provider: "codex", auth_index: "a" }] })
+      : response({ status_code: 200, body: JSON.stringify({ credits: { balance: 12 } }) });
+  }, () => time);
+  await service.saveConfig(enabled);
+  const first = await service.getLimits();
+  assert.equal(calls, 2);
+  for (let seconds = 15; seconds < 300; seconds += 15) {
+    time = Date.parse(first.fetched_at) + seconds * 1000;
+    assert.deepEqual(await service.getLimits(), first);
+  }
+  time = Date.parse(first.fetched_at) + 299_999;
+  assert.deepEqual(await service.getLimits(), first);
+  assert.equal(calls, 2, "local polls before five minutes must not query CPA");
+  time += 1;
+  const [next, concurrent] = await Promise.all([service.getLimits(), service.getLimits()]);
+  assert.deepEqual(next, concurrent);
+  assert.notEqual(next.fetched_at, first.fetched_at);
+  assert.equal(calls, 4, "five-minute expiry must issue only one new query round");
+  await service.saveConfig({ enabled: false });
+  assert.equal((await service.getLimits()).enabled, false);
+  assert.equal(calls, 4);
+  await service.saveConfig({ enabled: true });
+  assert.equal((await service.getLimits()).enabled, true);
+  assert.equal(calls, 6, "re-enabling must bypass the remaining cache interval");
+});
+
 test("management HTTP 200 does not hide upstream 429 or malformed quota data", async (t) => {
   const { service } = await fixture(t, async (url) => url.endsWith("/credentials")
     ? response({ files: [{ provider: "codex", auth_index: "a" }] })

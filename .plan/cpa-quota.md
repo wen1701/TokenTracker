@@ -227,3 +227,30 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   65 frontend/preferences tests, production native model/API/store/view typecheck,
   dashboard typecheck/build, copy/locale/UI/architecture/version validators.
 - Version 1.4.8 is ready for the fork macOS workflow.
+- Pushed cd10abde71f0bdc825b7e74be0ed2201002d7dc2 over SSH. Cloud run
+  38928258568 completed successfully with all focused tests, native XCTest,
+  universal application build, signing and packaging. Artifact 12057948265:
+  146419891 bytes; archive SHA256
+  451c98e2e429db4660687fbad8c8278fa91fe9c0258929de35ad3a4da3756d4b.
+- Normal artifact automation remains unavailable; requested manual download.
+  Current installed version remains 1.4.7 until the 1.4.8 archive is verified.
+- User downloaded the 1.4.8 artifact. Verified GitHub outer digest, inner ZIP
+  checksum, bundle identity/version, deep/strict signature and universal binary.
+  Normal-quit 1.4.7, backed it up under work/cpa-provider-install/backup,
+  replaced /Applications/TokenTracker.app with 1.4.8 and relaunched it.
+- Installer verified byte-identical saved connection configuration. Read-only
+  checks confirmed installed version 1.4.8 and persisted shared provider order
+  with 18 unique entries including CPA exactly once. Existing authenticated
+  local CPA endpoints return enabled=true, hasManagementKey=true, 4 accounts,
+  CPAMP v0 and no global error. No credentials exposed or server changes made.
+
+## Five-minute quota query interval
+- User requests increasing CPA quota polling from roughly one to five minutes.
+- Change the backend cache TTL to 300 seconds; local 15-second settings checks
+  continue so switches synchronize quickly. Re-enabling/configuration edits
+  still invalidate the cache and query immediately.
+- Added a fake-clock behavioral test that performs local polls before expiry,
+  verifies no outbound quota calls until 300 seconds, checks concurrent expiry
+  polls share one request round, and verifies immediate re-enable behavior.
+- All 12 focused backend/local API tests and version validation passed.
+  Version files synchronized to 1.4.9; next build and install the complete app.
