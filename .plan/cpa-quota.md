@@ -63,5 +63,18 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   universal app build, inner-to-outer ad-hoc signing and DMG/ZIP/checksums.
 - Gated npm publication to upstream and pointed macOS updates to the fork.
 - Workflow YAML parsed and 47 backend/API/release workflow checks passed.
-- Next: commit and push via SSH, follow the Actions run, fix build errors until
-  an installable test artifact exists. No public release or npm publication.
+- Committed 168548c88277dbe6b3a532cc72083aef0110291f and pushed through SSH
+  to fork/codex/cpa-quota-build. Fork main is unchanged.
+- Build started: https://github.com/wen1701/TokenTracker/actions/runs/38908785814
+- Last verified state: CPA behavior/security checks, dashboard build, embedded
+  runtime, Xcode generation and native model tests passed; universal app build
+  was in progress (job 116999034403).
+- Subsequent browser observation and status HTTP read were blocked by the
+  automatic approval service's missing_required_parameter internal error.
+  Do not treat the stale status or unavailable approval as a successful DMG build.
+- Next: recheck the running job, fix any errors, and verify uploaded DMG/ZIP;
+  a PR has not been created. No public release or npm publication.
+- Continued: run #1 completed native tests and universal compilation successfully;
+  the subsequent architecture check failed because lipo's variadic -verify_arch
+  option was placed before the input filename. Corrected the command order and
+  added an executable regression using real fat/thin Mach-O object fixtures.

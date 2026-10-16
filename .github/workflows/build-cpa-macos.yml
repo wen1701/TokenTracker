@@ -37,7 +37,7 @@ jobs:
 
       - name: Verify CPA behavior and shared API security
         run: |
-          node --test test/cpa.test.js test/local-api-cpa.test.js test/cpa-reset-native.test.js test/local-api-security.test.js test/usage-limits-singleflight.test.js
+          node --test test/cpa.test.js test/local-api-cpa.test.js test/cpa-reset-native.test.js test/cpa-macos-workflow.test.js test/local-api-security.test.js test/usage-limits-singleflight.test.js
           npm --prefix dashboard test -- src/hooks/use-cpa.test.js src/components/settings/CPASection.test.jsx src/components/CPAQuotaPanel.test.jsx src/pages/SettingsPage.test.jsx src/pages/LimitsPage.test.jsx
           npm --prefix dashboard run typecheck
           npm run validate:copy
@@ -95,8 +95,8 @@ jobs:
           test -f "$runtime/tokentracker/src/lib/cpa.js"
           test -f "$runtime/tokentracker/dashboard/dist/index.html"
           /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist"
-          lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/TokenTracker"
-          lipo -verify_arch arm64 x86_64 "$runtime/node"
+          lipo "$app/Contents/MacOS/TokenTracker" -verify_arch arm64 x86_64
+          lipo "$runtime/node" -verify_arch arm64 x86_64
           find "$runtime" -type f \
             \( -name node -o -name '*.dylib' -o -name '*.so' -o -name '*.node' \) \
             -exec codesign --force --timestamp=none --sign - {} \;
