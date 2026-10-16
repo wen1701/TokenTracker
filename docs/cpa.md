@@ -15,7 +15,8 @@ change the existing token usage queue or official-provider quota checks.
    the macOS popover and expanded Dynamic Island.
 4. Use **Track CPA Quotas** in the macOS status-item menu to pause or resume.
    The same persistent backend setting is used by the dashboard and native menu;
-   other open views pick up changes on their next poll (at most 15 seconds).
+   web views in the same window pick up changes immediately. Other web views
+   refresh when opened or focused; native views use the default background cycle.
 
 An empty management-key input preserves the saved key. Configuration is stored in
 the local tracker `config.json` with mode 0600; the key is never returned by the
@@ -45,8 +46,12 @@ Codex Credits remain credits, not a dollar balance. Plugin currency summaries
 retain the provider's currency. Missing windows, unknown reset times and failed
 queries are not converted to zero usage or zero balance.
 
-The backend caches results for five minutes, bounds concurrency to three accounts,
-and applies a 20-second total query deadline. Disabling or editing the connection
+Like the original app's normal background cycle, the native CPA view refreshes
+every five minutes. Web views read on mount and on focus/visibility changes,
+throttled to at most once per 15 seconds; they do not run a quota interval timer.
+The backend uses the original aggregate-cache duration of two minutes, bounds
+concurrency to three accounts, and applies a 20-second total query deadline.
+Disabling or editing the connection
 aborts its pending query, invalidates the cache and discards superseded results.
 
 ## Reset celebration

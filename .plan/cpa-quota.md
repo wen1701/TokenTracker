@@ -254,3 +254,23 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   polls share one request round, and verifies immediate re-enable behavior.
 - All 12 focused backend/local API tests and version validation passed.
   Version files synchronized to 1.4.9; next build and install the complete app.
+- User asks to reference the original project's frequency. Confirmed relevant
+  files match origin/main baseline 1223482: BackgroundRefreshPolicy's native
+  background refresh/sync interval is 300s; usage-limits backend aggregate TTL
+  is 2m, with a separate Claude fresh-cache TTL of 10m. Web 15s is a focus/visible
+  event throttle, not an interval timer. Keeping the requested CPA upstream
+  query cadence at 5m matches the native default; CPA's local settings check
+  remains 15s for quick synchronization. This does not claim identical caching.
+- Latest user direction supersedes the standalone 5m cache: follow the original
+  project's generic cadence. Native CPA now directly reuses
+  BackgroundRefreshPolicy.defaultRefreshInterval (300s); backend cache is 2m.
+  The web hook now reads on mount/focus/visibility with the original 15s focus
+  throttle instead of a periodic timer. Explicit setting changes still refresh.
+- The original direct-Claude 10m disk cache and reset-boundary scheduling are
+  provider-specific behavior, not generic CPA cache policy; no claim of copying
+  those provider-specific implementations. Server behavior remains unchanged.
+- Verified 12 backend/API tests, 66 dashboard/preferences tests, native Swift
+  model/API/store/view typecheck, frontend typecheck/build. Cache expiry and
+  focus throttling/unmount cleanup are covered by executable behavior tests.
+- Rebuild 1.4.9 from this final implementation. The prior 949dbc4 artifact has
+  the superseded cache-only policy and must not be installed.

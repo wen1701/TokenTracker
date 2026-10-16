@@ -53,12 +53,22 @@ export function useCPA({ pollLimits = false } = {}) {
   useEffect(() => {
     void refresh();
     if (!isLocalDashboardHost()) return undefined;
-    const timer = window.setInterval(refresh, 15_000);
+    let lastAt = Date.now();
+    const maybeRefresh = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastAt < 15_000) return;
+      lastAt = now;
+      void refresh();
+    };
+    window.addEventListener("focus", maybeRefresh);
+    document.addEventListener("visibilitychange", maybeRefresh);
     window.addEventListener("tt:cpa-changed", refresh);
     return () => {
       generation.current += 1;
       controller.current?.abort();
-      window.clearInterval(timer);
+      window.removeEventListener("focus", maybeRefresh);
+      document.removeEventListener("visibilitychange", maybeRefresh);
       window.removeEventListener("tt:cpa-changed", refresh);
     };
   }, [refresh]);

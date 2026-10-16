@@ -52,3 +52,42 @@ it("aborts a pending quota read when disabled and ignores a late response", asyn
   expect(result.current.data).toBeNull();
   expect(result.current.config.enabled).toBe(false);
 });
+
+it("matches upstream focus refresh throttling without a polling interval", async () => {
+  let time = 100_000;
+  let visibility = "visible";
+  const clock = vi.spyOn(Date, "now").mockImplementation(() => time);
+  const visible = vi.spyOn(document, "visibilityState", "get").mockImplementation(() => visibility);
+  const interval = vi.spyOn(window, "setInterval");
+  const fetch = vi.fn(async (url) => response(url.endsWith("-limits")
+    ? { enabled: true, accounts: [] }
+    : { enabled: true, hasManagementKey: true }));
+  vi.stubGlobal("fetch", fetch);
+  try {
+    const { result, unmount } = renderHook(() => useCPA({ pollLimits: true }));
+    expect(interval).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.data?.enabled).toBe(true));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    time += 14_999;
+    act(() => window.dispatchEvent(new Event("focus")));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    time += 1;
+    act(() => window.dispatchEvent(new Event("focus")));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(4));
+    time += 15_000;
+    visibility = "hidden";
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+    expect(fetch).toHaveBeenCalledTimes(4);
+    visibility = "visible";
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(6));
+    unmount();
+    time += 15_000;
+    act(() => window.dispatchEvent(new Event("focus")));
+    expect(fetch).toHaveBeenCalledTimes(6);
+  } finally {
+    clock.mockRestore();
+    visible.mockRestore();
+    interval.mockRestore();
+  }
+});

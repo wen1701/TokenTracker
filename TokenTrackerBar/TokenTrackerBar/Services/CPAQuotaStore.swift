@@ -14,7 +14,7 @@ final class CPAQuotaStore: ObservableObject {
     private var tracker = CPAResetTracker()
 
     private init() {
-        timer = Timer.publish(every: 15, on: .main, in: .common).autoconnect().sink { [weak self] _ in
+        timer = Timer.publish(every: BackgroundRefreshPolicy.defaultRefreshInterval, on: .main, in: .common).autoconnect().sink { [weak self] _ in
             Task { await self?.refresh() }
         }
         Task { await refresh() }
