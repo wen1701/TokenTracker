@@ -10,6 +10,7 @@ final class CPAQuotaStore: ObservableObject {
     @Published private(set) var unavailable = false
     private var timer: AnyCancellable?
     private var refreshing = false
+    private var refreshPending = false
     private var generation = 0
     private var tracker = CPAResetTracker()
 
@@ -21,9 +22,16 @@ final class CPAQuotaStore: ObservableObject {
     }
 
     func refresh() async {
-        guard !refreshing, !updating else { return }
+        guard !updating else { return }
+        guard !refreshing else { refreshPending = true; return }
         refreshing = true
-        defer { refreshing = false }
+        defer {
+            refreshing = false
+            if refreshPending {
+                refreshPending = false
+                Task { await refresh() }
+            }
+        }
         let issued = generation
         do {
             let next = try await APIClient.shared.fetchCPAConfig()

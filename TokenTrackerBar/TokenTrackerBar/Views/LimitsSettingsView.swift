@@ -92,6 +92,7 @@ struct LimitsSettingsView: View {
                 .padding(.bottom, 6)
         }
         .frame(width: 240)
+        .onAppear { Task { await cpa.refresh() } }
     }
 
     private var providerList: some View {

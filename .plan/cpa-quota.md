@@ -274,3 +274,43 @@ macOS menu quick toggle, and quota-reset confetti using existing preferences.
   focus throttling/unmount cleanup are covered by executable behavior tests.
 - Rebuild 1.4.9 from this final implementation. The prior 949dbc4 artifact has
   the superseded cache-only policy and must not be installed.
+- Pushed e968de9ef989aaa7d5834e1da24ce4d081f0c1b3 via SSH. Final cloud run
+  38932958580 succeeded, including 50 focused backend/security/reset/order tests,
+  66 dashboard/preferences tests, validators, native XCTest, universal build,
+  signing and packaging. Artifact 12058949548 is 146399274 bytes, SHA256
+  d26a92f9cadb26ae04c381dbde48c0c83525e50ae15d864c13636ced7efd26b2.
+- Artifact metadata is pinned to the final e968de9 source; do not use the earlier
+  cache-only build. Requested manual download. Current installed app is 1.4.8.
+- User downloaded the final 1.4.9 artifact. Verified the source SHA, outer digest,
+  inner archive checksum, bundle version/identity, strict signature and universal
+  architecture. Normal-quit 1.4.8, backed it up, installed and launched 1.4.9.
+  Installer confirmed unchanged configuration bytes, preserving saved credentials.
+- Verified the installed embedded CPA source equals the final repository source.
+  Executed its actual production module with a fake clock: cache reused at
+  119999ms and new quota round at 120000ms. Installed local authenticated API
+  confirms enabled CPA with saved key, 4 accounts, v0 negotiation and no global
+  error. Native cadence directly uses the original 300s BackgroundRefreshPolicy;
+  the final dashboard bundle has mount/focus behavior verified by 66 tests.
+
+## CPA switch disabled after startup
+- User reports the CPA gear-row switch is gray and cannot be enabled in 1.4.9.
+- Saved config still has enabled=true, URL and management key; authenticated local
+  config endpoint returns HTTP 200 with hasManagementKey=true. This is native
+  state loading, not missing credentials or an upstream CPA authorization error.
+- StatusBarController initializes CPAQuotaStore before ensureServerRunning; the
+  initial config request can fail. With the new 300s interval and no readiness
+  callback, config stays nil and the row disables itself until the next timer.
+- Reproduce a readiness notification overlapping the failed initial read in the
+  production Swift store, then fix lost refreshes, refresh after server readiness
+  and refresh on opening the gear panel. Keep normal 5m quota cadence unchanged.
+- Verify the regression turns green, native compilation, toggle behavior and cloud
+  build. Preserve credentials and replace the installed app with a verified fix.
+- Regression reproduced against unmodified 1.4.9 store: real compiled Swift test
+  fails with "server-ready refresh was lost; CPA remains disabled". After the
+  coalescing/readiness fix, the same test passes, including disable/re-enable.
+- Added a post-server-ready refresh in AppDelegate and a refresh on opening the
+  settings gear. Overlapping refresh requests now queue one follow-up instead
+  of disappearing. The 300s timer and two-minute backend cache are unchanged.
+- Native model/API/store/view typecheck and version/UI/architecture validators
+  passed. Added executable regression to the fork's required workflow; version
+  files synchronized to 1.4.10. Next verify cloud tests/build and install.

@@ -37,7 +37,7 @@ jobs:
 
       - name: Verify CPA behavior and shared API security
         run: |
-          node --test test/cpa.test.js test/local-api-cpa.test.js test/cpa-reset-native.test.js test/cpa-macos-workflow.test.js test/limits-providers-parity.test.js test/limits-settings-cpa-native.test.js test/local-api-security.test.js test/usage-limits-singleflight.test.js
+          node --test test/cpa.test.js test/local-api-cpa.test.js test/cpa-reset-native.test.js test/cpa-store-native.test.js test/cpa-macos-workflow.test.js test/limits-providers-parity.test.js test/limits-settings-cpa-native.test.js test/local-api-security.test.js test/usage-limits-singleflight.test.js
           npm --prefix dashboard test -- src/hooks/use-limits-display-prefs.test.js src/hooks/use-cpa.test.js src/components/settings/CPASection.test.jsx src/components/CPAQuotaPanel.test.jsx src/pages/SettingsPage.test.jsx src/pages/LimitsPage.test.jsx
           npm --prefix dashboard run typecheck
           npm run validate:copy

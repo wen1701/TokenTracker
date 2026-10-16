@@ -171,6 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let serverHealthy = await APIClient.shared.checkServerHealth()
             let isOnline = serverManager.isServerRunning || serverHealthy
             if isOnline {
+                Task { await CPAQuotaStore.shared.refresh() }
                 await viewModel.syncThenLoad()
             }
             viewModel.startAutoRefresh()
