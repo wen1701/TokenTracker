@@ -116,6 +116,18 @@ actor APIClient {
         )
     }
 
+    func fetchCPAConfig() async throws -> CPAConfig {
+        try await fetch("/functions/tokentracker-cpa-config", requiresLocalAuth: true)
+    }
+
+    func fetchCPAQuotas() async throws -> CPAQuotaResponse {
+        try await fetch("/functions/tokentracker-cpa-limits", requestTimeout: Self.usageLimitsRequestTimeout, requiresLocalAuth: true)
+    }
+
+    func setCPAEnabled(_ enabled: Bool) async throws -> CPAConfig {
+        try await post("/functions/tokentracker-cpa-config", body: JSONEncoder().encode(["enabled": enabled]))
+    }
+
     func fetchSubscriptions() async throws -> [SubscriptionRecord] {
         let response: SubscriptionListResponse = try await fetch(
             "/functions/tokentracker-subscription-manager",
@@ -260,7 +272,7 @@ actor APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if path == "/functions/tokentracker-local-sync" {
+        if path == "/functions/tokentracker-local-sync" || path == "/functions/tokentracker-cpa-config" {
             request.setValue(try await fetchLocalAuthToken(), forHTTPHeaderField: "x-tokentracker-local-auth")
         }
         request.httpBody = body

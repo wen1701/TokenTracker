@@ -27,6 +27,13 @@ enum Strings {
     }
 
     static var appTitle: String { "TokenTracker" }
+    static var cpaTitle: String { t("CPA Account Quotas", "CPA 账号配额", "CPA 帳號配額", "CPA アカウント枠", "CPA 계정 할당량") }
+    static var cpaEnabled: String { t("Track CPA Quotas", "开启 CPA 配额查询", "開啟 CPA 配額查詢", "CPA 枠を追跡", "CPA 할당량 추적") }
+    static var cpaUnavailable: String { t("Quota query unavailable", "暂时无法查询配额", "暫時無法查詢配額", "枠を取得できません", "할당량을 조회할 수 없음") }
+    static var cpaUnsupported: String { t("Quota provider not available", "暂无对应配额查询支持", "暫無對應配額查詢支援", "対応する枠取得機能がありません", "지원되는 할당량 공급자가 없음") }
+    static var cpaCredits: String { t("Credits", "积分", "積分", "クレジット", "크레딧") }
+    static var cpaResets: String { t("Resets", "重置时间", "重置時間", "リセット", "초기화") }
+    static func cpaRemaining(_ percent: Int) -> String { t("\(percent)% remaining", "剩余 \(percent)%", "剩餘 \(percent)%", "残り \(percent)%", "\(percent)% 남음") }
     static var serverUnavailable: String { t("Server Unavailable", "服务器不可用", "伺服器不可用", "サーバーを利用できません", "서버를 사용할 수 없음") }
     static var serverStarting: String { t("Starting TokenTracker", "正在启动 TokenTracker", "正在啟動 TokenTracker", "TokenTracker を起動中", "TokenTracker 시작 중") }
     static var serverPreparing: String { t("This usually takes a few seconds.", "通常只需要几秒钟。", "通常只需要幾秒鐘。", "通常は数秒で完了します。", "보통 몇 초 정도 걸립니다.") }

@@ -32,6 +32,7 @@ struct DashboardView: View {
                                 totalCost: viewModel.totalCost
                             )
                             UsageLimitsView(limits: viewModel.usageLimits, subscriptions: viewModel.subscriptions)
+                            CPAQuotaView()
                             ActivityHeatmapView(
                                 heatmap: viewModel.heatmap,
                                 showsTransientLocalData: viewModel.activityShowsTransientLocalData

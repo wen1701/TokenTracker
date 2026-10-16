@@ -3,6 +3,7 @@ import AppKit
 
 struct LimitsSettingsView: View {
     @ObservedObject var store: LimitsSettingsStore
+    @ObservedObject private var cpa = CPAQuotaStore.shared
     @Environment(\.colorScheme) private var colorScheme
     @State private var draggingId: String?
     @AppStorage(WeeklyLimitResetDetector.toastEnabledKey) private var toastOnReset = WeeklyLimitResetDetector.toastEnabledDefault
@@ -87,6 +88,15 @@ struct LimitsSettingsView: View {
                 .opacity(0.35)
                 .padding(.bottom, 2)
 
+            providerList
+                .padding(.bottom, 6)
+        }
+        .frame(width: 240)
+        .onAppear { Task { await cpa.refresh() } }
+    }
+
+    private var providerList: some View {
+        ScrollView {
             VStack(spacing: 0) {
                 ForEach(store.providerOrder, id: \.self) { id in
                     providerRow(id: id)
@@ -102,9 +112,8 @@ struct LimitsSettingsView: View {
                         ))
                 }
             }
-            .padding(.bottom, 6)
         }
-        .frame(width: 240)
+        .frame(height: min(CGFloat(store.providerOrder.count * 29 + 36), 460))
     }
 
     private func providerRow(id: String) -> some View {
@@ -122,12 +131,19 @@ struct LimitsSettingsView: View {
             Spacer()
 
             Toggle("", isOn: Binding(
-                get: { store.isVisible(id) },
-                set: { store.setProviderVisibilityFromMenu(id, isVisible: $0) }
+                get: { id == "cpa" ? cpa.config?.enabled == true : store.isVisible(id) },
+                set: { visible in
+                    if id == "cpa" {
+                        Task { await cpa.setEnabled(visible) }
+                    } else {
+                        store.setProviderVisibilityFromMenu(id, isVisible: visible)
+                    }
+                }
             ))
             .toggleStyle(.switch)
             .controlSize(.mini)
             .labelsHidden()
+            .disabled(id == "cpa" && (cpa.updating || cpa.config?.hasManagementKey != true))
             .accessibilityLabel(LimitsSettingsStore.displayNames[id] ?? id)
         }
         .padding(.horizontal, 12)
@@ -147,6 +163,8 @@ struct LimitsSettingsView: View {
     @ViewBuilder
     private func providerIcon(id: String) -> some View {
         switch id {
+        case "cpa":
+            Image(systemName: "server.rack").foregroundStyle(.secondary)
         case "cursor", "kimi", "kiro", "grok", "copilot", "zcode", "opencodeGo", "commandCode", "qoder", "qoderCn", "codingPlan", "agentPlan", "devin":
             let filename: String = {
                 switch id {

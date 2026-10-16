@@ -91,7 +91,7 @@ struct UsageLimitsView: View {
 
                     if visibleGroups.isEmpty {
                         // Missing quota content does not mean the user hid it.
-                        if LimitsSettingsStore.allProviders.allSatisfy({ !settings.isVisible($0) }) {
+                        if LimitsSettingsStore.allProviders.filter({ $0 != "cpa" }).allSatisfy({ !settings.isVisible($0) }) {
                             Text(Strings.allProvidersHidden)
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)

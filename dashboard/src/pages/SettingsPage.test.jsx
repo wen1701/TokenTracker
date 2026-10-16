@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SettingsPage } from "./SettingsPage.jsx";
+vi.mock("../hooks/use-cpa.js", () => ({ useCPA: () => ({ available: false }) }));
 
 const nativeSettingsMock = vi.hoisted(() => ({
   windows: false,

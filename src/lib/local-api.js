@@ -1016,6 +1016,7 @@ function createLocalApiHandler({ queuePath, serverVersion = null, trackerDataDir
   let relayCookies = new Map();
   const localAuthToken = crypto.randomBytes(24).toString("hex");
   const trackerDataDir = isolatedTrackerDataDir || path.dirname(qp);
+  const cpa = require("./cpa").createCPAIntegration({ configPath: path.join(trackerDataDir, "config.json") });
   const cookiePath = path.join(trackerDataDir, "relay-cookies.json");
   const localSyncDeviceTokenStore = createCloudDeviceTokenStore(path.join(trackerDataDir, "cloud-device-token.json"));
   const localSyncDeviceTokenCache = new Map();
@@ -3018,6 +3019,29 @@ function createLocalApiHandler({ queuePath, serverVersion = null, trackerDataDir
         return true;
       }
       json(res, { error: "Method Not Allowed" }, 405);
+      return true;
+    }
+
+    // CPA credentials and account quotas stay on the authenticated local API.
+    if (p === "/functions/tokentracker-cpa-config" || p === "/functions/tokentracker-cpa-limits") {
+      if (!isAuthorizedLocalMutation(req)) {
+        json(res, { error: "Unauthorized" }, 401);
+        return true;
+      }
+      const method = String(req.method || "GET").toUpperCase();
+      try {
+        if (method === "GET") {
+          json(res, p.endsWith("-config") ? await cpa.getConfig() : await cpa.getLimits());
+        } else if (method === "POST" && p.endsWith("-config")) {
+          const body = await readJsonBody(req);
+          json(res, await cpa.saveConfig(body));
+        } else {
+          json(res, { error: "Method Not Allowed" }, 405);
+        }
+      } catch (error) {
+        const code = ["invalid_config", "invalid_url", "configuration_required"].includes(error.message) ? error.message : "unavailable";
+        json(res, { error: code }, code === "unavailable" ? 500 : 400);
+      }
       return true;
     }
 

@@ -221,6 +221,20 @@ final class LimitsSettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.isVisible("devin"))
     }
 
+    func testCPAUsesTheSharedPersistedProviderOrder() {
+        let (store, defaults) = makeStore()
+        XCTAssertEqual(store.providerOrder.last, "cpa")
+        let index = store.providerOrder.firstIndex(of: "cpa")!
+        store.moveProviderFromMenu(from: IndexSet(integer: index), to: 0)
+        XCTAssertEqual(store.providerOrder.first, "cpa")
+        XCTAssertEqual(LimitsSettingsStore(userDefaults: defaults).providerOrder.first, "cpa")
+        XCTAssertTrue(store.applyBridgeSnapshot([
+            "providerOrder": ["devin", "cpa", "claude"],
+            "updatedAt": NSNumber(value: Int64.max / 1024),
+        ]))
+        XCTAssertEqual(Array(store.providerOrder.prefix(3)), ["devin", "cpa", "claude"])
+    }
+
     private func makeStore(
         file: StaticString = #filePath,
         line: UInt = #line
